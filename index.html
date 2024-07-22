@@ -42,15 +42,30 @@
         th {
             background-color: #f2f2f2;
         }
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        .edit-btn, .delete-btn {
+            padding: 2px 5px;
+            font-size: 12px;
+        }
+        .edit-btn {
+            background-color: #FFA500;
+        }
+        .delete-btn {
+            background-color: #FF0000;
+        }
     </style>
 </head>
 <body>
     <h1>Medication Tracker</h1>
     <form id="medForm">
+        <input type="hidden" id="medId">
         <input type="text" id="medName" placeholder="Medication Name" required>
         <input type="text" id="medDosage" placeholder="Dosage" required>
         <input type="text" id="medFrequency" placeholder="Frequency" required>
-        <button type="submit">Add Medication</button>
+        <button type="submit" id="submitBtn">Add Medication</button>
     </form>
     <table id="medTable">
         <thead>
@@ -58,6 +73,7 @@
                 <th>Medication</th>
                 <th>Dosage</th>
                 <th>Frequency</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="medList"></tbody>
@@ -66,6 +82,77 @@
     <script>
         const medForm = document.getElementById('medForm');
         const medList = document.getElementById('medList');
+        const submitBtn = document.getElementById('submitBtn');
+        let medications = JSON.parse(localStorage.getItem('medications')) || [];
+        let editingId = null;
+
+        function saveMedications() {
+            localStorage.setItem('medications', JSON.stringify(medications));
+        }
+
+        function renderMedications() {
+            medList.innerHTML = '';
+            medications.forEach(med => {
+                const row = medList.insertRow();
+                row.insertCell(0).textContent = med.name;
+                row.insertCell(1).textContent = med.dosage;
+                row.insertCell(2).textContent = med.frequency;
+                const actionsCell = row.insertCell(3);
+                actionsCell.className = 'actions';
+                
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.className = 'edit-btn';
+                editBtn.onclick = () => editMedication(med.id);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = () => deleteMedication(med.id);
+                
+                actionsCell.appendChild(editBtn);
+                actionsCell.appendChild(deleteBtn);
+            });
+        }
+
+        function addMedication(name, dosage, frequency) {
+            const newMed = {
+                id: Date.now(),
+                name,
+                dosage,
+                frequency
+            };
+            medications.push(newMed);
+            saveMedications();
+            renderMedications();
+        }
+
+        function editMedication(id) {
+            const med = medications.find(m => m.id === id);
+            if (med) {
+                document.getElementById('medId').value = med.id;
+                document.getElementById('medName').value = med.name;
+                document.getElementById('medDosage').value = med.dosage;
+                document.getElementById('medFrequency').value = med.frequency;
+                submitBtn.textContent = 'Update Medication';
+                editingId = id;
+            }
+        }
+
+        function updateMedication(id, name, dosage, frequency) {
+            const index = medications.findIndex(m => m.id === id);
+            if (index !== -1) {
+                medications[index] = { ...medications[index], name, dosage, frequency };
+                saveMedications();
+                renderMedications();
+            }
+        }
+
+        function deleteMedication(id) {
+            medications = medications.filter(med => med.id !== id);
+            saveMedications();
+            renderMedications();
+        }
 
         medForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -74,13 +161,18 @@
             const dosage = document.getElementById('medDosage').value;
             const frequency = document.getElementById('medFrequency').value;
 
-            const row = medList.insertRow();
-            row.insertCell(0).textContent = name;
-            row.insertCell(1).textContent = dosage;
-            row.insertCell(2).textContent = frequency;
+            if (editingId) {
+                updateMedication(editingId, name, dosage, frequency);
+                editingId = null;
+                submitBtn.textContent = 'Add Medication';
+            } else {
+                addMedication(name, dosage, frequency);
+            }
 
             medForm.reset();
         });
+
+        renderMedications();
     </script>
 </body>
 </html>
