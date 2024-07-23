@@ -21,6 +21,14 @@
             line-height: 1.6;
             margin: 0;
             padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-mode {
+            --primary-color: #6ba7e8;
+            --secondary-color: #ffc107;
+            --background-color: #121212;
+            --text-color: #e0e0e0;
+            --border-color: #333;
         }
         .container {
             max-width: 900px;
@@ -30,7 +38,10 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        h1 {
+        .dark-mode .container {
+            background-color: #1e1e1e;
+        }
+        h1, h2 {
             text-align: center;
             color: var(--primary-color);
             margin-bottom: 30px;
@@ -45,6 +56,8 @@
             font-size: 16px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
         button {
             cursor: pointer;
@@ -74,8 +87,14 @@
             font-weight: 600;
             cursor: pointer;
         }
+        .dark-mode th {
+            background-color: #2a2a2a;
+        }
         th:hover {
             background-color: #e9ecef;
+        }
+        .dark-mode th:hover {
+            background-color: #3a3a3a;
         }
         .actions {
             display: flex;
@@ -123,11 +142,47 @@
         .error {
             background-color: var(--danger-color);
         }
-        #scheduleContainer {
+        #scheduleContainer, #statsContainer {
             margin-top: 30px;
             padding: 20px;
             background-color: #f8f9fa;
             border-radius: 8px;
+        }
+        .dark-mode #scheduleContainer, .dark-mode #statsContainer {
+            background-color: #2a2a2a;
+        }
+        .stat-card {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .stat-card h3 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .stat-card p {
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+        #darkModeToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         @media (max-width: 600px) {
             .container {
@@ -176,8 +231,13 @@
             <h2>Today's Schedule</h2>
             <ul id="scheduleList"></ul>
         </div>
+        <div id="statsContainer">
+            <h2>Statistics</h2>
+            <div id="statsGrid"></div>
+        </div>
     </div>
     <div id="notification" class="notification"></div>
+    <button id="darkModeToggle">🌓</button>
 
     <script>
         const medForm = document.getElementById('medForm');
@@ -187,6 +247,8 @@
         const submitBtn = document.getElementById('submitBtn');
         const scheduleList = document.getElementById('scheduleList');
         const notification = document.getElementById('notification');
+        const statsGrid = document.getElementById('statsGrid');
+        const darkModeToggle = document.getElementById('darkModeToggle');
         let medications = JSON.parse(localStorage.getItem('medications')) || [];
         let currentSort = 'name';
         let editingId = null;
@@ -249,6 +311,7 @@
             });
 
             updateSchedule();
+            updateStats();
         }
 
         function addMedication(name, dosage, frequency, notes) {
@@ -258,7 +321,8 @@
                 dosage,
                 frequency,
                 notes,
-                lastTaken: null
+                lastTaken: null,
+                timesTaken: 0
             };
             medications.push(newMed);
             saveMedications();
@@ -302,6 +366,7 @@
             const index = medications.findIndex(m => m.id === id);
             if (index !== -1) {
                 medications[index].lastTaken = Date.now();
+                medications[index].timesTaken = (medications[index].timesTaken || 0) + 1;
                 saveMedications();
                 renderMedications();
                 showNotification('Medication taken', 'success');
@@ -326,6 +391,36 @@
             if (!lastTaken) return new Date();
             const hours = parseInt(frequency.match(/\d+/)[0]);
             return new Date(lastTaken.getTime() + hours * 60 * 60 * 1000);
+        }
+
+        function updateStats() {
+            statsGrid.innerHTML = '';
+            const totalMeds = medications.length;
+            const totalDoses = medications.reduce((sum, med) => sum + (med.timesTaken || 0), 0);
+            const mostTakenMed = medications.reduce((prev, current) => 
+                (prev.timesTaken || 0) > (current.timesTaken || 0) ? prev : current
+            , {});
+            const lastTakenMed = medications.reduce((prev, current) => 
+                (prev.lastTaken || 0) > (current.lastTaken || 0) ? prev : current
+            , {});
+
+            const stats = [
+                { label: 'Total Medications', value: totalMeds },
+                { label: 'Total Doses Taken', value: totalDoses },
+                { label: 'Most Taken Medication', value: mostTakenMed.name || 'N/A' },
+                { label: 'Last Taken Medication', value: lastTakenMed.name || 'N/A' },
+                { label: 'Adherence Rate', value: `${totalMeds ? Math.round((totalDoses / totalMeds) * 100) : 0}%` }
+            ];
+
+            stats.forEach(stat => {
+                const statCard = document.createElement('div');
+                statCard.className = 'stat-card';
+                statCard.innerHTML = `
+                    <h3>${stat.value}</h3>
+                    <p>${stat.label}</p>
+                `;
+                statsGrid.appendChild(statCard);
+            });
         }
 
         medForm.addEventListener('submit', function(e) {
@@ -361,6 +456,16 @@
                 renderMedications();
             });
         });
+
+        darkModeToggle.addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        });
+
+        // Initialize dark mode based on user's preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
 
         renderMedications();
     </script>
