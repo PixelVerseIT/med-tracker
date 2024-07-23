@@ -5,85 +5,143 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medication Tracker</title>
     <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5a623;
+            --background-color: #f0f4f8;
+            --text-color: #333;
+            --border-color: #e1e4e8;
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         h1 {
             text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
         }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
+        form, #filterContainer {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
         }
-        input, button {
-            padding: 5px;
+        input, button, select {
+            padding: 10px;
             font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
         }
         button {
             cursor: pointer;
-            background-color: #4CAF50;
+            background-color: var(--primary-color);
             color: white;
             border: none;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3a7bd5;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px;
             text-align: left;
+            border-bottom: 1px solid var(--border-color);
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #f8f9fa;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        th:hover {
+            background-color: #e9ecef;
         }
         .actions {
             display: flex;
-            gap: 5px;
+            gap: 10px;
         }
         .edit-btn, .delete-btn {
-            padding: 2px 5px;
-            font-size: 12px;
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 4px;
         }
         .edit-btn {
-            background-color: #FFA500;
+            background-color: var(--secondary-color);
+        }
+        .edit-btn:hover {
+            background-color: #e69b17;
         }
         .delete-btn {
-            background-color: #FF0000;
+            background-color: #e74c3c;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            form, #filterContainer {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Medication Tracker</h1>
-    <form id="medForm">
-        <input type="hidden" id="medId">
-        <input type="text" id="medName" placeholder="Medication Name" required>
-        <input type="text" id="medDosage" placeholder="Dosage" required>
-        <input type="text" id="medFrequency" placeholder="Frequency" required>
-        <button type="submit" id="submitBtn">Add Medication</button>
-    </form>
-    <table id="medTable">
-        <thead>
-            <tr>
-                <th>Medication</th>
-                <th>Dosage</th>
-                <th>Frequency</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="medList"></tbody>
-    </table>
+    <div class="container">
+        <h1>Medication Tracker</h1>
+        <form id="medForm">
+            <input type="hidden" id="medId">
+            <input type="text" id="medName" placeholder="Medication Name" required>
+            <input type="text" id="medDosage" placeholder="Dosage" required>
+            <input type="text" id="medFrequency" placeholder="Frequency" required>
+            <button type="submit" id="submitBtn">Add Medication</button>
+        </form>
+        <div id="filterContainer">
+            <input type="text" id="filterInput" placeholder="Filter medications...">
+            <select id="sortSelect">
+                <option value="name">Sort by Name</option>
+                <option value="dosage">Sort by Dosage</option>
+                <option value="frequency">Sort by Frequency</option>
+            </select>
+        </div>
+        <table id="medTable">
+            <thead>
+                <tr>
+                    <th data-sort="name">Medication</th>
+                    <th data-sort="dosage">Dosage</th>
+                    <th data-sort="frequency">Frequency</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="medList"></tbody>
+        </table>
+    </div>
 
     <script>
         const medForm = document.getElementById('medForm');
         const medList = document.getElementById('medList');
+        const filterInput = document.getElementById('filterInput');
+        const sortSelect = document.getElementById('sortSelect');
         const submitBtn = document.getElementById('submitBtn');
         let medications = JSON.parse(localStorage.getItem('medications')) || [];
+        let currentSort = 'name';
         let editingId = null;
 
         function saveMedications() {
@@ -92,7 +150,15 @@
 
         function renderMedications() {
             medList.innerHTML = '';
-            medications.forEach(med => {
+            const filteredMeds = medications.filter(med => 
+                med.name.toLowerCase().includes(filterInput.value.toLowerCase()) ||
+                med.dosage.toLowerCase().includes(filterInput.value.toLowerCase()) ||
+                med.frequency.toLowerCase().includes(filterInput.value.toLowerCase())
+            );
+
+            filteredMeds.sort((a, b) => a[currentSort].localeCompare(b[currentSort]));
+
+            filteredMeds.forEach(med => {
                 const row = medList.insertRow();
                 row.insertCell(0).textContent = med.name;
                 row.insertCell(1).textContent = med.dosage;
@@ -149,9 +215,11 @@
         }
 
         function deleteMedication(id) {
-            medications = medications.filter(med => med.id !== id);
-            saveMedications();
-            renderMedications();
+            if (confirm('Are you sure you want to delete this medication?')) {
+                medications = medications.filter(med => med.id !== id);
+                saveMedications();
+                renderMedications();
+            }
         }
 
         medForm.addEventListener('submit', function(e) {
@@ -172,7 +240,23 @@
             medForm.reset();
         });
 
+        filterInput.addEventListener('input', renderMedications);
+
+        sortSelect.addEventListener('change', function() {
+            currentSort = this.value;
+            renderMedications();
+        });
+
+        document.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                currentSort = th.dataset.sort;
+                sortSelect.value = currentSort;
+                renderMedications();
+            });
+        });
+
         renderMedications();
     </script>
+</div>
 </body>
 </html>
