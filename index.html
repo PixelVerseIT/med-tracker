@@ -11,6 +11,8 @@
             --background-color: #f0f4f8;
             --text-color: #333;
             --border-color: #e1e4e8;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -21,7 +23,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background-color: white;
             padding: 30px;
@@ -38,7 +40,7 @@
             gap: 15px;
             margin-bottom: 30px;
         }
-        input, button, select {
+        input, button, select, textarea {
             padding: 10px;
             font-size: 16px;
             border: 1px solid var(--border-color);
@@ -49,10 +51,13 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
         }
         button:hover {
             background-color: #3a7bd5;
+        }
+        button:active {
+            transform: translateY(1px);
         }
         table {
             width: 100%;
@@ -76,7 +81,7 @@
             display: flex;
             gap: 10px;
         }
-        .edit-btn, .delete-btn {
+        .edit-btn, .delete-btn, .take-btn {
             padding: 6px 12px;
             font-size: 14px;
             border-radius: 4px;
@@ -88,10 +93,41 @@
             background-color: #e69b17;
         }
         .delete-btn {
-            background-color: #e74c3c;
+            background-color: var(--danger-color);
         }
         .delete-btn:hover {
-            background-color: #c0392b;
+            background-color: #bd2130;
+        }
+        .take-btn {
+            background-color: var(--success-color);
+        }
+        .take-btn:hover {
+            background-color: #218838;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .notification.show {
+            opacity: 1;
+        }
+        .success {
+            background-color: var(--success-color);
+        }
+        .error {
+            background-color: var(--danger-color);
+        }
+        #scheduleContainer {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
         }
         @media (max-width: 600px) {
             .container {
@@ -110,7 +146,8 @@
             <input type="hidden" id="medId">
             <input type="text" id="medName" placeholder="Medication Name" required>
             <input type="text" id="medDosage" placeholder="Dosage" required>
-            <input type="text" id="medFrequency" placeholder="Frequency" required>
+            <input type="text" id="medFrequency" placeholder="Frequency (e.g., 'Every 8 hours')" required>
+            <textarea id="medNotes" placeholder="Notes (optional)"></textarea>
             <button type="submit" id="submitBtn">Add Medication</button>
         </form>
         <div id="filterContainer">
@@ -119,6 +156,7 @@
                 <option value="name">Sort by Name</option>
                 <option value="dosage">Sort by Dosage</option>
                 <option value="frequency">Sort by Frequency</option>
+                <option value="lastTaken">Sort by Last Taken</option>
             </select>
         </div>
         <table id="medTable">
@@ -127,12 +165,19 @@
                     <th data-sort="name">Medication</th>
                     <th data-sort="dosage">Dosage</th>
                     <th data-sort="frequency">Frequency</th>
+                    <th data-sort="lastTaken">Last Taken</th>
+                    <th>Notes</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="medList"></tbody>
         </table>
+        <div id="scheduleContainer">
+            <h2>Today's Schedule</h2>
+            <ul id="scheduleList"></ul>
+        </div>
     </div>
+    <div id="notification" class="notification"></div>
 
     <script>
         const medForm = document.getElementById('medForm');
@@ -140,12 +185,22 @@
         const filterInput = document.getElementById('filterInput');
         const sortSelect = document.getElementById('sortSelect');
         const submitBtn = document.getElementById('submitBtn');
+        const scheduleList = document.getElementById('scheduleList');
+        const notification = document.getElementById('notification');
         let medications = JSON.parse(localStorage.getItem('medications')) || [];
         let currentSort = 'name';
         let editingId = null;
 
         function saveMedications() {
             localStorage.setItem('medications', JSON.stringify(medications));
+        }
+
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            setTimeout(() => {
+                notification.className = 'notification';
+            }, 3000);
         }
 
         function renderMedications() {
@@ -156,14 +211,21 @@
                 med.frequency.toLowerCase().includes(filterInput.value.toLowerCase())
             );
 
-            filteredMeds.sort((a, b) => a[currentSort].localeCompare(b[currentSort]));
+            filteredMeds.sort((a, b) => {
+                if (currentSort === 'lastTaken') {
+                    return (b.lastTaken || 0) - (a.lastTaken || 0);
+                }
+                return a[currentSort].localeCompare(b[currentSort]);
+            });
 
             filteredMeds.forEach(med => {
                 const row = medList.insertRow();
                 row.insertCell(0).textContent = med.name;
                 row.insertCell(1).textContent = med.dosage;
                 row.insertCell(2).textContent = med.frequency;
-                const actionsCell = row.insertCell(3);
+                row.insertCell(3).textContent = med.lastTaken ? new Date(med.lastTaken).toLocaleString() : 'Never';
+                row.insertCell(4).textContent = med.notes || '';
+                const actionsCell = row.insertCell(5);
                 actionsCell.className = 'actions';
                 
                 const editBtn = document.createElement('button');
@@ -176,21 +238,32 @@
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.onclick = () => deleteMedication(med.id);
                 
+                const takeBtn = document.createElement('button');
+                takeBtn.textContent = 'Take';
+                takeBtn.className = 'take-btn';
+                takeBtn.onclick = () => takeMedication(med.id);
+                
                 actionsCell.appendChild(editBtn);
                 actionsCell.appendChild(deleteBtn);
+                actionsCell.appendChild(takeBtn);
             });
+
+            updateSchedule();
         }
 
-        function addMedication(name, dosage, frequency) {
+        function addMedication(name, dosage, frequency, notes) {
             const newMed = {
                 id: Date.now(),
                 name,
                 dosage,
-                frequency
+                frequency,
+                notes,
+                lastTaken: null
             };
             medications.push(newMed);
             saveMedications();
             renderMedications();
+            showNotification('Medication added successfully', 'success');
         }
 
         function editMedication(id) {
@@ -200,17 +273,19 @@
                 document.getElementById('medName').value = med.name;
                 document.getElementById('medDosage').value = med.dosage;
                 document.getElementById('medFrequency').value = med.frequency;
+                document.getElementById('medNotes').value = med.notes || '';
                 submitBtn.textContent = 'Update Medication';
                 editingId = id;
             }
         }
 
-        function updateMedication(id, name, dosage, frequency) {
+        function updateMedication(id, name, dosage, frequency, notes) {
             const index = medications.findIndex(m => m.id === id);
             if (index !== -1) {
-                medications[index] = { ...medications[index], name, dosage, frequency };
+                medications[index] = { ...medications[index], name, dosage, frequency, notes };
                 saveMedications();
                 renderMedications();
+                showNotification('Medication updated successfully', 'success');
             }
         }
 
@@ -219,7 +294,38 @@
                 medications = medications.filter(med => med.id !== id);
                 saveMedications();
                 renderMedications();
+                showNotification('Medication deleted', 'success');
             }
+        }
+
+        function takeMedication(id) {
+            const index = medications.findIndex(m => m.id === id);
+            if (index !== -1) {
+                medications[index].lastTaken = Date.now();
+                saveMedications();
+                renderMedications();
+                showNotification('Medication taken', 'success');
+            }
+        }
+
+        function updateSchedule() {
+            scheduleList.innerHTML = '';
+            const now = new Date();
+            medications.forEach(med => {
+                const lastTaken = med.lastTaken ? new Date(med.lastTaken) : null;
+                const nextDose = calculateNextDose(lastTaken, med.frequency);
+                if (nextDose && nextDose.getDate() === now.getDate()) {
+                    const li = document.createElement('li');
+                    li.textContent = `${med.name} - ${med.dosage} at ${nextDose.toLocaleTimeString()}`;
+                    scheduleList.appendChild(li);
+                }
+            });
+        }
+
+        function calculateNextDose(lastTaken, frequency) {
+            if (!lastTaken) return new Date();
+            const hours = parseInt(frequency.match(/\d+/)[0]);
+            return new Date(lastTaken.getTime() + hours * 60 * 60 * 1000);
         }
 
         medForm.addEventListener('submit', function(e) {
@@ -228,13 +334,14 @@
             const name = document.getElementById('medName').value;
             const dosage = document.getElementById('medDosage').value;
             const frequency = document.getElementById('medFrequency').value;
+            const notes = document.getElementById('medNotes').value;
 
             if (editingId) {
-                updateMedication(editingId, name, dosage, frequency);
+                updateMedication(editingId, name, dosage, frequency, notes);
                 editingId = null;
                 submitBtn.textContent = 'Add Medication';
             } else {
-                addMedication(name, dosage, frequency);
+                addMedication(name, dosage, frequency, notes);
             }
 
             medForm.reset();
@@ -257,6 +364,5 @@
 
         renderMedications();
     </script>
-</div>
 </body>
 </html>
