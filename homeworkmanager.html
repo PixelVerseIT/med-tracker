@@ -7,12 +7,14 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 300px;
+            max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f0f0f0;
         }
         h1 {
             text-align: center;
+            color: #333;
         }
         #task-form {
             display: flex;
@@ -20,25 +22,52 @@
         }
         #task-input {
             flex-grow: 1;
-            padding: 5px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
         }
         button {
-            padding: 5px 10px;
-            background-color: #4ebaba;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #49bba4;
             color: white;
             border: none;
             cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 0 4px 4px 0;
+        }
+        button:hover {
+            background-color: #3da692;
         }
         ul {
             list-style-type: none;
             padding: 0;
         }
         li {
+            display: flex;
+            align-items: center;
             margin-bottom: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .task-text {
+            flex-grow: 1;
+            margin-left: 10px;
         }
         .completed {
             text-decoration: line-through;
             color: #888;
+        }
+        .delete-btn {
+            background-color: #ff4444;
+            margin-left: 10px;
+            border-radius: 4px;
+        }
+        .delete-btn:hover {
+            background-color: #cc0000;
         }
     </style>
 </head>
@@ -48,7 +77,7 @@
 
     <form id="task-form">
         <input type="text" id="task-input" placeholder="Enter homework task" required>
-        <button type="submit">Add</button>
+        <button type="submit">Add Task</button>
     </form>
 
     <ul id="task-list"></ul>
@@ -58,6 +87,8 @@
         const taskInput = document.getElementById('task-input');
         const taskList = document.getElementById('task-list');
 
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
         taskForm.addEventListener('submit', function(e) {
             e.preventDefault();
             addTask(taskInput.value);
@@ -65,16 +96,53 @@
         });
 
         function addTask(taskText) {
+            const task = {
+                id: Date.now(),
+                text: taskText,
+                completed: false
+            };
+            tasks.push(task);
+            saveTasks();
+            renderTask(task);
+        }
+
+        function renderTask(task) {
             const li = document.createElement('li');
             li.innerHTML = `
-                <input type="checkbox">
-                <span>${taskText}</span>
+                <input type="checkbox" id="task-${task.id}" ${task.completed ? 'checked' : ''}>
+                <span class="task-text ${task.completed ? 'completed' : ''}">${task.text}</span>
+                <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
             `;
             li.querySelector('input').addEventListener('change', function() {
-                this.nextElementSibling.classList.toggle('completed');
+                toggleTaskComplete(task.id);
             });
             taskList.appendChild(li);
         }
+
+        function toggleTaskComplete(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            task.completed = !task.completed;
+            const taskElement = document.querySelector(`#task-${taskId}`);
+            taskElement.nextElementSibling.classList.toggle('completed');
+            saveTasks();
+        }
+
+        function deleteTask(taskId) {
+            tasks = tasks.filter(t => t.id !== taskId);
+            const taskElement = document.querySelector(`#task-${taskId}`).parentElement;
+            taskList.removeChild(taskElement);
+            saveTasks();
+        }
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function loadTasks() {
+            tasks.forEach(task => renderTask(task));
+        }
+
+        loadTasks();
     </script>
     
 </body>
