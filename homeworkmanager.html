@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        #task-form {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #task-input {
+            flex-grow: 1;
+            padding: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            background-color: #4ebaba;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Homework Tracker</h1>
+
+    <form id="task-form">
+        <input type="text" id="task-input" placeholder="Enter homework task" required>
+        <button type="submit">Add</button>
+    </form>
+
+    <ul id="task-list"></ul>
+
+    <script>
+        const taskForm = document.getElementById('task-form');
+        const taskInput = document.getElementById('task-input');
+        const taskList = document.getElementById('task-list');
+
+        taskForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            addTask(taskInput.value);
+            taskInput.value = '';
+        });
+
+        function addTask(taskText) {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <input type="checkbox">
+                <span>${taskText}</span>
+            `;
+            li.querySelector('input').addEventListener('change', function() {
+                this.nextElementSibling.classList.toggle('completed');
+            });
+            taskList.appendChild(li);
+        }
+    </script>
+    
+</body>
+</html>
