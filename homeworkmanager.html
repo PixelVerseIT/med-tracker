@@ -6,11 +6,22 @@
     <title>Homework Tracker</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+            font-family: 'Arial', sans-serif;
             background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
         }
         h1 {
             text-align: center;
@@ -30,7 +41,7 @@
         button {
             padding: 10px 15px;
             font-size: 16px;
-            background-color: #49bba4;
+            background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
@@ -38,112 +49,127 @@
             border-radius: 0 4px 4px 0;
         }
         button:hover {
-            background-color: #3da692;
+            background-color: #45a049;
         }
         ul {
             list-style-type: none;
             padding: 0;
         }
         li {
-            display: flex;
-            align-items: center;
+            background-color: #f9f9f9;
             margin-bottom: 10px;
-            background-color: white;
             padding: 10px;
             border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+        li:hover {
+            background-color: #f0f0f0;
+        }
+        .checkbox {
+            margin-right: 10px;
         }
         .task-text {
             flex-grow: 1;
-            margin-left: 10px;
         }
-        .completed {
+        .completed .task-text {
             text-decoration: line-through;
             color: #888;
         }
         .delete-btn {
             background-color: #ff4444;
-            margin-left: 10px;
+            color: white;
+            border: none;
+            padding: 5px 10px;
             border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
         }
         .delete-btn:hover {
             background-color: #cc0000;
         }
+        #task-count {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-
-    <h1>Homework Tracker</h1>
-
-    <form id="task-form">
-        <input type="text" id="task-input" placeholder="Enter homework task" required>
-        <button type="submit">Add Task</button>
-    </form>
-
-    <ul id="task-list"></ul>
+    <div class="container">
+        <h1>Homework Tracker</h1>
+        <form id="task-form">
+            <input type="text" id="task-input" placeholder="Enter homework task" required>
+            <button type="submit">Add</button>
+        </form>
+        <ul id="task-list"></ul>
+        <div id="task-count"></div>
+    </div>
 
     <script>
         const taskForm = document.getElementById('task-form');
         const taskInput = document.getElementById('task-input');
         const taskList = document.getElementById('task-list');
+        const taskCount = document.getElementById('task-count');
 
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
-        taskForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            addTask(taskInput.value);
-            taskInput.value = '';
-        });
-
-        function addTask(taskText) {
-            const task = {
-                id: Date.now(),
-                text: taskText,
-                completed: false
-            };
-            tasks.push(task);
-            saveTasks();
-            renderTask(task);
-        }
-
-        function renderTask(task) {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <input type="checkbox" id="task-${task.id}" ${task.completed ? 'checked' : ''}>
-                <span class="task-text ${task.completed ? 'completed' : ''}">${task.text}</span>
-                <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
-            `;
-            li.querySelector('input').addEventListener('change', function() {
-                toggleTaskComplete(task.id);
-            });
-            taskList.appendChild(li);
-        }
-
-        function toggleTaskComplete(taskId) {
-            const task = tasks.find(t => t.id === taskId);
-            task.completed = !task.completed;
-            const taskElement = document.querySelector(`#task-${taskId}`);
-            taskElement.nextElementSibling.classList.toggle('completed');
-            saveTasks();
-        }
-
-        function deleteTask(taskId) {
-            tasks = tasks.filter(t => t.id !== taskId);
-            const taskElement = document.querySelector(`#task-${taskId}`).parentElement;
-            taskList.removeChild(taskElement);
-            saveTasks();
-        }
-
-        function saveTasks() {
+        function saveTasksToLocalStorage() {
             localStorage.setItem('tasks', JSON.stringify(tasks));
         }
 
-        function loadTasks() {
-            tasks.forEach(task => renderTask(task));
+        function renderTasks() {
+            taskList.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = task.completed ? 'completed' : '';
+                li.innerHTML = `
+                    <input type="checkbox" class="checkbox" ${task.completed ? 'checked' : ''}>
+                    <span class="task-text">${task.text}</span>
+                    <button class="delete-btn">Delete</button>
+                `;
+                li.querySelector('.checkbox').addEventListener('change', () => toggleTask(index));
+                li.querySelector('.delete-btn').addEventListener('click', () => deleteTask(index));
+                taskList.appendChild(li);
+            });
+            updateTaskCount();
         }
 
-        loadTasks();
+        function addTask(taskText) {
+            tasks.push({ text: taskText, completed: false });
+            saveTasksToLocalStorage();
+            renderTasks();
+        }
+
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            saveTasksToLocalStorage();
+            renderTasks();
+        }
+
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            saveTasksToLocalStorage();
+            renderTasks();
+        }
+
+        function updateTaskCount() {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(task => task.completed).length;
+            taskCount.textContent = `${completedTasks} of ${totalTasks} tasks completed`;
+        }
+
+        taskForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const taskText = taskInput.value.trim();
+            if (taskText) {
+                addTask(taskText);
+                taskInput.value = '';
+            }
+        });
+
+        renderTasks();
     </script>
-    
 </body>
 </html>
