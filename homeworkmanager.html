@@ -21,39 +21,33 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             padding: 30px;
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
         }
         h1 {
             text-align: center;
             color: #2c3e50;
             margin-bottom: 30px;
         }
-        #task-form {
+        #task-form, #search-sort-container {
             display: flex;
             margin-bottom: 20px;
+            gap: 10px;
         }
-        #task-input {
+        input, select, button {
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        input[type="text"], select {
             flex-grow: 1;
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px 0 0 4px;
-        }
-        #due-date {
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-left: none;
         }
         button {
-            padding: 12px 20px;
-            font-size: 16px;
             background-color: #3498db;
             color: white;
             border: none;
             cursor: pointer;
             transition: background-color 0.3s;
-            border-radius: 0 4px 4px 0;
         }
         button:hover {
             background-color: #2980b9;
@@ -89,14 +83,21 @@
             text-decoration: line-through;
             color: #95a5a6;
         }
-        .delete-btn {
-            background-color: #e74c3c;
+        .action-btn {
+            background-color: #3498db;
             color: white;
             border: none;
             padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
+            margin-left: 5px;
+        }
+        .action-btn:hover {
+            background-color: #2980b9;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
         }
         .delete-btn:hover {
             background-color: #c0392b;
@@ -118,14 +119,19 @@
             font-size: 14px;
             background-color: #ecf0f1;
             color: #34495e;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
         }
         #filter-buttons button.active {
             background-color: #3498db;
             color: white;
+        }
+        .priority-high {
+            border-left: 5px solid #e74c3c;
+        }
+        .priority-medium {
+            border-left: 5px solid #f39c12;
+        }
+        .priority-low {
+            border-left: 5px solid #2ecc71;
         }
     </style>
 </head>
@@ -135,8 +141,21 @@
         <form id="task-form">
             <input type="text" id="task-input" placeholder="Enter homework task" required>
             <input type="date" id="due-date">
+            <select id="priority">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
             <button type="submit">Add</button>
         </form>
+        <div id="search-sort-container">
+            <input type="text" id="search-input" placeholder="Search tasks">
+            <select id="sort-select">
+                <option value="date-added">Date Added</option>
+                <option value="due-date">Due Date</option>
+                <option value="priority">Priority</option>
+            </select>
+        </div>
         <div id="filter-buttons">
             <button id="filter-all" class="active">All</button>
             <button id="filter-active">Active</button>
@@ -150,9 +169,12 @@
         const taskForm = document.getElementById('task-form');
         const taskInput = document.getElementById('task-input');
         const dueDateInput = document.getElementById('due-date');
+        const prioritySelect = document.getElementById('priority');
         const taskList = document.getElementById('task-list');
         const taskCount = document.getElementById('task-count');
         const filterButtons = document.querySelectorAll('#filter-buttons button');
+        const searchInput = document.getElementById('search-input');
+        const sortSelect = document.getElementById('sort-select');
 
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let currentFilter = 'all';
@@ -164,27 +186,34 @@
         function renderTasks() {
             taskList.innerHTML = '';
             const filteredTasks = filterTasks(tasks);
-            filteredTasks.forEach((task, index) => {
+            const sortedTasks = sortTasks(filteredTasks);
+            const searchedTasks = searchTasks(sortedTasks);
+            searchedTasks.forEach((task, index) => {
                 const li = document.createElement('li');
                 li.className = task.completed ? 'completed' : '';
+                li.classList.add(`priority-${task.priority}`);
                 li.innerHTML = `
                     <input type="checkbox" class="checkbox" ${task.completed ? 'checked' : ''}>
                     <span class="task-text">${task.text}</span>
                     <span class="due-date">${task.dueDate ? formatDate(task.dueDate) : 'No due date'}</span>
-                    <button class="delete-btn">Delete</button>
+                    <button class="action-btn edit-btn">Edit</button>
+                    <button class="action-btn delete-btn">Delete</button>
                 `;
                 li.querySelector('.checkbox').addEventListener('change', () => toggleTask(index));
+                li.querySelector('.edit-btn').addEventListener('click', () => editTask(index));
                 li.querySelector('.delete-btn').addEventListener('click', () => deleteTask(index));
                 taskList.appendChild(li);
             });
             updateTaskCount();
         }
 
-        function addTask(taskText, dueDate) {
-            tasks.push({ 
+        function addTask(taskText, dueDate, priority) {
+            tasks.unshift({ 
                 text: taskText, 
                 completed: false, 
-                dueDate: dueDate
+                dueDate: dueDate,
+                priority: priority,
+                dateAdded: new Date().toISOString()
             });
             saveTasksToLocalStorage();
             renderTasks();
@@ -194,6 +223,22 @@
             tasks[index].completed = !tasks[index].completed;
             saveTasksToLocalStorage();
             renderTasks();
+        }
+
+        function editTask(index) {
+            const task = tasks[index];
+            taskInput.value = task.text;
+            dueDateInput.value = task.dueDate || '';
+            prioritySelect.value = task.priority;
+            taskForm.onsubmit = function(e) {
+                e.preventDefault();
+                task.text = taskInput.value.trim();
+                task.dueDate = dueDateInput.value;
+                task.priority = prioritySelect.value;
+                saveTasksToLocalStorage();
+                renderTasks();
+                resetForm();
+            };
         }
 
         function deleteTask(index) {
@@ -219,19 +264,48 @@
             }
         }
 
+        function sortTasks(tasks) {
+            const sortBy = sortSelect.value;
+            return [...tasks].sort((a, b) => {
+                switch(sortBy) {
+                    case 'due-date':
+                        return new Date(a.dueDate) - new Date(b.dueDate);
+                    case 'priority':
+                        const priorityOrder = { high: 0, medium: 1, low: 2 };
+                        return priorityOrder[a.priority] - priorityOrder[b.priority];
+                    default:
+                        return new Date(b.dateAdded) - new Date(a.dateAdded);
+                }
+            });
+        }
+
+        function searchTasks(tasks) {
+            const searchTerm = searchInput.value.toLowerCase();
+            return tasks.filter(task => 
+                task.text.toLowerCase().includes(searchTerm) ||
+                (task.dueDate && task.dueDate.includes(searchTerm)) ||
+                task.priority.toLowerCase().includes(searchTerm)
+            );
+        }
+
         function formatDate(dateString) {
             const options = { year: 'numeric', month: 'short', day: 'numeric' };
             return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        function resetForm() {
+            taskForm.reset();
+            taskForm.onsubmit = null;
         }
 
         taskForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const taskText = taskInput.value.trim();
             const dueDate = dueDateInput.value;
+            const priority = prioritySelect.value;
             if (taskText) {
-                addTask(taskText, dueDate);
-                taskInput.value = '';
-                dueDateInput.value = '';
+                addTask(taskText, dueDate, priority);
+                resetForm();
             }
         });
 
@@ -243,6 +317,9 @@
                 renderTasks();
             });
         });
+
+        searchInput.addEventListener('input', renderTasks);
+        sortSelect.addEventListener('change', renderTasks);
 
         renderTasks();
     </script>
