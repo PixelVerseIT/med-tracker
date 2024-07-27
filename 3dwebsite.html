@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Ring Showcase</title>
+    <title>Infinity Ring - Apple Inspired Showcase</title>
     <style>
         body, html {
             margin: 0;
@@ -35,25 +35,40 @@
             padding: 0 20px;
         }
         h1 {
-            font-size: 4em;
+            font-size: 5em;
             margin-bottom: 0.5em;
             opacity: 0;
+            transform: translateY(50px);
+            font-weight: 700;
         }
         p {
-            font-size: 1.5em;
+            font-size: 1.8em;
             max-width: 600px;
             line-height: 1.6;
             opacity: 0;
+            transform: translateY(30px);
+            font-weight: 300;
         }
         .hero {
-            font-size: 6em;
-            font-weight: bold;
+            font-size: 8em;
+            font-weight: 700;
             text-transform: uppercase;
             opacity: 0;
+            transform: translateY(50px);
+        }
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 4px;
+            background-color: #fff;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
+    <div class="progress-bar"></div>
     <div id="scene-container"></div>
     <div class="content">
         <div class="section">
@@ -61,31 +76,31 @@
         </div>
         <div class="section">
             <h1>Elegance in Motion</h1>
-            <p>Watch as our Infinity Ring comes to life, revealing its intricate design with every scroll.</p>
+            <p>Discover the beauty of our Infinity Ring as it comes to life with every scroll.</p>
         </div>
         <div class="section">
-            <h1>Brilliant from Every Angle</h1>
-            <p>Expertly crafted to catch the light and eyes from any perspective.</p>
+            <h1>Brilliant Design</h1>
+            <p>Expertly crafted to captivate from every angle.</p>
         </div>
         <div class="section">
-            <h1>A Perfect Circle</h1>
-            <p>Symbolizing eternal love and endless possibilities.</p>
+            <h1>Endless Possibilities</h1>
+            <p>A perfect circle symbolizing eternal love and infinite potential.</p>
         </div>
         <div class="section">
-            <h1>Yours to Cherish</h1>
-            <p>An heirloom piece that tells your unique story.</p>
+            <h1>Your Story</h1>
+            <p>An heirloom piece that becomes part of your journey.</p>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/ScrollTrigger.min.js"></script>
 
     <script>
         // Three.js setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('scene-container').appendChild(renderer.domElement);
@@ -99,11 +114,13 @@
         scene.add(pointLight);
 
         // Create a more detailed ring geometry
-        const ringGeometry = new THREE.TorusGeometry(1, 0.2, 32, 100);
-        const material = new THREE.MeshStandardMaterial({ 
+        const ringGeometry = new THREE.TorusGeometry(1, 0.2, 64, 200);
+        const material = new THREE.MeshPhysicalMaterial({ 
             color: 0xffd700,
-            metalness: 0.8,
-            roughness: 0.2,
+            metalness: 0.9,
+            roughness: 0.1,
+            clearcoat: 1,
+            clearcoatRoughness: 0.1
         });
         const ring = new THREE.Mesh(ringGeometry, material);
         scene.add(ring);
@@ -120,32 +137,22 @@
         // Scroll-based animations
         gsap.registerPlugin(ScrollTrigger);
 
-        // Ring movement path
-        const path = [
-            { x: 0, y: 0, z: 0, scale: 1, rotationX: 0, rotationY: 0 },
-            { x: -2, y: 1, z: 1, scale: 1.5, rotationX: Math.PI / 4, rotationY: Math.PI / 4 },
-            { x: 2, y: -1, z: 2, scale: 2, rotationX: Math.PI / 2, rotationY: Math.PI / 2 },
-            { x: 0, y: 0, z: 3, scale: 1.5, rotationX: Math.PI, rotationY: Math.PI },
-            { x: 0, y: 0, z: 0, scale: 1, rotationX: Math.PI * 2, rotationY: Math.PI * 2 }
-        ];
-
-        // Animate ring along the path
-        gsap.to(ring.position, {
-            motionPath: {
-                path: path.map(p => ({ x: p.x, y: p.y, z: p.z })),
-                curviness: 1.5
-            },
-            scrollTrigger: {
-                trigger: "body",
-                start: "top top",
-                end: "bottom bottom",
-                scrub: 1,
+        // Progress bar
+        gsap.to('.progress-bar', {
+            width: '100%',
+            ease: 'none',
+            scrollTrigger: { 
+                trigger: 'body',
+                start: 'top top',
+                end: 'bottom bottom',
+                scrub: 0.3
             }
         });
 
+        // Ring animation
         gsap.to(ring.rotation, {
-            x: Math.PI * 2,
-            y: Math.PI * 2,
+            x: Math.PI * 4,
+            y: Math.PI * 4,
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
@@ -154,10 +161,9 @@
             }
         });
 
-        gsap.to(ring.scale, {
-            x: 2,
+        gsap.to(ring.position, {
             y: 2,
-            z: 2,
+            z: -2,
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
@@ -165,6 +171,28 @@
                 scrub: 1,
                 yoyo: true,
                 repeat: 1
+            }
+        });
+
+        gsap.to(ring.scale, {
+            x: 1.5,
+            y: 1.5,
+            z: 1.5,
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1,
+            }
+        });
+
+        gsap.to(camera.position, {
+            z: 3,
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1,
             }
         });
 
@@ -186,8 +214,8 @@
         // Hero text animation
         gsap.to('.hero', {
             opacity: 1,
-            duration: 1,
             y: 0,
+            duration: 1.5,
             ease: "power2.out",
         });
 
