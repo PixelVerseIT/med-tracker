@@ -10,6 +10,9 @@
             padding: 0;
             height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #000;
+            color: #fff;
+            overflow-x: hidden;
         }
         #scene-container {
             position: fixed;
@@ -21,15 +24,31 @@
         .content {
             position: relative;
             z-index: 1;
-            color: white;
-            padding: 20px;
         }
         .section {
             height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 2em;
+            text-align: center;
+            padding: 0 20px;
+        }
+        h1 {
+            font-size: 4em;
+            margin-bottom: 0.5em;
+            opacity: 0;
+        }
+        p {
+            font-size: 1.5em;
+            max-width: 600px;
+            line-height: 1.6;
+            opacity: 0;
+        }
+        .hero {
+            font-size: 6em;
+            font-weight: bold;
+            text-transform: uppercase;
             opacity: 0;
         }
     </style>
@@ -38,16 +57,23 @@
     <div id="scene-container"></div>
     <div class="content">
         <div class="section">
-            <h1>Discover Our Ring</h1>
+            <h1 class="hero">Infinity Ring</h1>
         </div>
         <div class="section">
-            <p>Elegant Design</p>
+            <h1>Elegance in Motion</h1>
+            <p>Watch as our Infinity Ring comes to life, revealing its intricate design with every scroll.</p>
         </div>
         <div class="section">
-            <p>Premium Materials</p>
+            <h1>Brilliant from Every Angle</h1>
+            <p>Expertly crafted to catch the light and eyes from any perspective.</p>
         </div>
         <div class="section">
-            <p>Timeless Beauty</p>
+            <h1>A Perfect Circle</h1>
+            <p>Symbolizing eternal love and endless possibilities.</p>
+        </div>
+        <div class="section">
+            <h1>Yours to Cherish</h1>
+            <p>An heirloom piece that tells your unique story.</p>
         </div>
     </div>
 
@@ -59,14 +85,27 @@
         // Three.js setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('scene-container').appendChild(renderer.domElement);
 
-        // Create a simple ring geometry
-        const geometry = new THREE.TorusGeometry(1, 0.3, 16, 100);
-        const material = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-        const ring = new THREE.Mesh(geometry, material);
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // Create a more detailed ring geometry
+        const ringGeometry = new THREE.TorusGeometry(1, 0.2, 32, 100);
+        const material = new THREE.MeshStandardMaterial({ 
+            color: 0xffd700,
+            metalness: 0.8,
+            roughness: 0.2,
+        });
+        const ring = new THREE.Mesh(ringGeometry, material);
         scene.add(ring);
 
         camera.position.z = 5;
@@ -81,7 +120,29 @@
         // Scroll-based animations
         gsap.registerPlugin(ScrollTrigger);
 
-        // Ring rotation
+        // Ring movement path
+        const path = [
+            { x: 0, y: 0, z: 0, scale: 1, rotationX: 0, rotationY: 0 },
+            { x: -2, y: 1, z: 1, scale: 1.5, rotationX: Math.PI / 4, rotationY: Math.PI / 4 },
+            { x: 2, y: -1, z: 2, scale: 2, rotationX: Math.PI / 2, rotationY: Math.PI / 2 },
+            { x: 0, y: 0, z: 3, scale: 1.5, rotationX: Math.PI, rotationY: Math.PI },
+            { x: 0, y: 0, z: 0, scale: 1, rotationX: Math.PI * 2, rotationY: Math.PI * 2 }
+        ];
+
+        // Animate ring along the path
+        gsap.to(ring.position, {
+            motionPath: {
+                path: path.map(p => ({ x: p.x, y: p.y, z: p.z })),
+                curviness: 1.5
+            },
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1,
+            }
+        });
+
         gsap.to(ring.rotation, {
             x: Math.PI * 2,
             y: Math.PI * 2,
@@ -93,17 +154,41 @@
             }
         });
 
+        gsap.to(ring.scale, {
+            x: 2,
+            y: 2,
+            z: 2,
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1,
+                yoyo: true,
+                repeat: 1
+            }
+        });
+
         // Text animations
         gsap.utils.toArray('.section').forEach((section, i) => {
-            gsap.to(section, {
-                opacity: 1,
+            const tl = gsap.timeline({
                 scrollTrigger: {
                     trigger: section,
                     start: "top center",
-                    end: "bottom center",
+                    end: "center center",
                     scrub: true,
                 }
             });
+
+            tl.to(section.querySelector('h1'), { opacity: 1, y: 0, duration: 0.5 })
+              .to(section.querySelector('p'), { opacity: 1, y: 0, duration: 0.5 }, "-=0.3");
+        });
+
+        // Hero text animation
+        gsap.to('.hero', {
+            opacity: 1,
+            duration: 1,
+            y: 0,
+            ease: "power2.out",
         });
 
         // Resize handler
