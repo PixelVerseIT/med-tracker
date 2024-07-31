@@ -48,18 +48,23 @@
             cubes.push(cube);
         }
 
-        window.addEventListener('click', (event) => {
-            const x = (event.clientX / window.innerWidth) * 2 - 1;
-            const y = -(event.clientY / window.innerHeight) * 2 + 1;
-            createCube(x * 10, y * 5);
-        });
-
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
+        let mouseDownTime = 0;
 
-        renderer.domElement.addEventListener('mousedown', () => isDragging = true);
-        renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+        renderer.domElement.addEventListener('mousedown', (event) => {
+            isDragging = false;
+            mouseDownTime = new Date().getTime();
+            previousMousePosition = {
+                x: event.clientX,
+                y: event.clientY
+            };
+        });
+
         renderer.domElement.addEventListener('mousemove', (event) => {
+            if (mouseDownTime && new Date().getTime() - mouseDownTime > 200) {
+                isDragging = true;
+            }
             if (isDragging) {
                 const deltaMove = {
                     x: event.clientX - previousMousePosition.x,
@@ -67,11 +72,21 @@
                 };
                 scene.rotation.y += deltaMove.x * 0.01;
                 scene.rotation.x += deltaMove.y * 0.01;
+                previousMousePosition = {
+                    x: event.clientX,
+                    y: event.clientY
+                };
             }
-            previousMousePosition = {
-                x: event.clientX,
-                y: event.clientY
-            };
+        });
+
+        renderer.domElement.addEventListener('mouseup', (event) => {
+            if (!isDragging) {
+                const x = (event.clientX / window.innerWidth) * 2 - 1;
+                const y = -(event.clientY / window.innerHeight) * 2 + 1;
+                createCube(x * 10, y * 5);
+            }
+            isDragging = false;
+            mouseDownTime = 0;
         });
 
         function animate() {
