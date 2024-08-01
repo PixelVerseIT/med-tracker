@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Print Cost Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>3D Print Cost Calculator</h1>
+    
+    <label for="spoolWeight">Weight of filament spool (kg):</label>
+    <input type="number" id="spoolWeight" step="0.01" required>
+    
+    <label for="spoolCost">Cost of filament spool:</label>
+    <input type="number" id="spoolCost" step="0.01" required>
+    
+    <label for="printWeight">Weight of your print (g):</label>
+    <input type="number" id="printWeight" step="0.1" required>
+    
+    <button onclick="calculateCost()">Calculate Cost</button>
+    
+    <div id="result"></div>
+
+    <script>
+        function calculateCost() {
+            const spoolWeight = parseFloat(document.getElementById('spoolWeight').value);
+            const spoolCost = parseFloat(document.getElementById('spoolCost').value);
+            const printWeight = parseFloat(document.getElementById('printWeight').value);
+
+            if (isNaN(spoolWeight) || isNaN(spoolCost) || isNaN(printWeight)) {
+                alert('Please enter valid numbers for all fields.');
+                return;
+            }
+
+            const spoolWeightGrams = spoolWeight * 1000;
+            const costPerGram = spoolCost / spoolWeightGrams;
+            const printCost = costPerGram * printWeight;
+
+            document.getElementById('result').textContent = `The estimated cost of your 3D print is: ${printCost.toFixed(2)}`;
+        }
+    </script>
+</body>
+</html>
