@@ -7,51 +7,91 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .calculator {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
         }
         label {
             display: block;
             margin-top: 10px;
-        }
-        input {
-            width: 100%;
-            padding: 5px;
-            margin-top: 5px;
-        }
-        button {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        #result {
-            margin-top: 20px;
             font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e7f3fe;
+            border-radius: 4px;
+        }
+        .result h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .total-cost {
+            font-weight: bold;
+            color: #2980b9;
         }
     </style>
 </head>
 <body>
-    <h1>3D Print Cost Calculator</h1>
-    
-    <label for="spoolWeight">Weight of filament spool (kg):</label>
-    <input type="number" id="spoolWeight" step="0.01" required>
-    
-    <label for="spoolCost">Cost of filament spool:</label>
-    <input type="number" id="spoolCost" step="0.01" required>
-    
-    <label for="printWeight">Weight of your print (g):</label>
-    <input type="number" id="printWeight" step="0.1" required>
-    
-    <button onclick="calculateCost()">Calculate Cost</button>
-    
-    <div id="result"></div>
+    <div class="calculator">
+        <h1>3D Print Cost Calculator</h1>
+        
+        <label for="material">Material:</label>
+        <select id="material">
+            <option value="PLA">PLA (Density: 1.24 g/cm³)</option>
+            <option value="ABS">ABS (Density: 1.04 g/cm³)</option>
+            <option value="PETG">PETG (Density: 1.27 g/cm³)</option>
+            <option value="TPU">TPU (Density: 1.21 g/cm³)</option>
+        </select>
+        
+        <label for="spoolWeight">Spool Weight (kg):</label>
+        <input type="number" id="spoolWeight" value="1" min="0" step="0.1">
+        
+        <label for="spoolCost">Spool Cost ($):</label>
+        <input type="number" id="spoolCost" value="20" min="0" step="0.01">
+        
+        <label for="printWeight">Print Weight (g):</label>
+        <input type="number" id="printWeight" value="100" min="0" step="0.1">
+        
+        <div class="result">
+            <h2>Cost Breakdown:</h2>
+            <p>Material Cost: $<span id="materialCost">0.00</span></p>
+            <p>Estimated Energy Cost: $<span id="energyCost">0.00</span></p>
+            <p class="total-cost">Total Estimated Cost: $<span id="totalCost">0.00</span></p>
+        </div>
+    </div>
 
     <script>
+        const materials = {
+            'PLA': 1.24,
+            'ABS': 1.04,
+            'PETG': 1.27,
+            'TPU': 1.21
+        };
+
         function calculateCost() {
+            const material = document.getElementById('material').value;
             const spoolWeight = parseFloat(document.getElementById('spoolWeight').value);
             const spoolCost = parseFloat(document.getElementById('spoolCost').value);
             const printWeight = parseFloat(document.getElementById('printWeight').value);
@@ -61,12 +101,29 @@
                 return;
             }
 
+            const density = materials[material];
             const spoolWeightGrams = spoolWeight * 1000;
             const costPerGram = spoolCost / spoolWeightGrams;
-            const printCost = costPerGram * printWeight;
+            const materialCost = costPerGram * printWeight;
+            
+            // estimate energy cost (assuming 0.1 kWh per hour of printing, $0.12 per kWh)
+            const printTimeHours = (printWeight / 10) * (1 / density); // rough estmate
+            const energyCost = printTimeHours * 0.1 * 0.12;
+            
+            const totalCost = materialCost + energyCost;
 
-            document.getElementById('result').textContent = `The estimated cost of your 3D print is: ${printCost.toFixed(2)}`;
+            document.getElementById('materialCost').textContent = materialCost.toFixed(2);
+            document.getElementById('energyCost').textContent = energyCost.toFixed(2);
+            document.getElementById('totalCost').textContent = totalCost.toFixed(2);
         }
+
+        // event listerners for input and output
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('input', calculateCost);
+        });
+
+        // run the calc
+        calculateCost();
     </script>
 </body>
 </html>
