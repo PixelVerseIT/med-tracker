@@ -95,11 +95,23 @@
         .hidden {
             display: none;
         }
+        #chart {
+            margin-top: 20px;
+            width: 100%;
+            height: 300px;
+        }
+        .custom-material {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+        }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 </head>
 <body>
     <div class="calculator">
-        <h1>3D Print Cost Calculator</h1>
+        <h1>Advanced 3D Print Cost Calculator</h1>
         
         <div class="input-group">
             <label for="material">Material:</label>
@@ -108,9 +120,17 @@
                 <option value="ABS">ABS (Density: 1.04 g/cm³)</option>
                 <option value="PETG">PETG (Density: 1.27 g/cm³)</option>
                 <option value="TPU">TPU (Density: 1.21 g/cm³)</option>
+                <option value="custom">Custom Material</option>
             </select>
         </div>
         
+        <div id="customMaterial" class="custom-material hidden">
+            <div class="input-group">
+                <label for="customDensity">Custom Material Density (g/cm³):</label>
+                <input type="number" id="customDensity" value="1.0" min="0" step="0.01">
+            </div>
+        </div>
+
         <div class="input-group">
             <label for="spoolWeight">Spool Weight (kg):</label>
             <input type="number" id="spoolWeight" value="1" min="0" step="0.1">
@@ -142,6 +162,14 @@
                 <label for="failureRate">Failure Rate (%):</label>
                 <input type="number" id="failureRate" value="5" min="0" max="100" step="1">
             </div>
+            <div class="input-group">
+                <label for="laborCost">Labor Cost ($/hour):</label>
+                <input type="number" id="laborCost" value="0" min="0" step="0.01">
+            </div>
+            <div class="input-group">
+                <label for="setupTime">Setup Time (minutes):</label>
+                <input type="number" id="setupTime" value="15" min="0" step="1">
+            </div>
         </div>
         
         <div class="result">
@@ -149,17 +177,23 @@
             <p>Material Cost: $<span id="materialCost">0.00</span></p>
             <p>Estimated Energy Cost: $<span id="energyCost">0.00</span></p>
             <p>Estimated Failure Cost: $<span id="failureCost">0.00</span></p>
+            <p>Labor Cost: $<span id="totalLaborCost">0.00</span></p>
             <p class="total-cost">Total Estimated Cost: $<span id="totalCost">0.00</span></p>
             <p>Cost per Gram: $<span id="costPerGram">0.00</span></p>
+            <p>Estimated Print Time: <span id="printTime">0</span> hours</p>
         </div>
+
+        <div id="chart"></div>
     </div>
 
     <script>
+        let chart;
         const materials = {
             'PLA': 1.24,
             'ABS': 1.04,
             'PETG': 1.27,
-            'TPU': 1.21
+            'TPU': 1.21,
+            'custom': 1.0
         };
 
         function calculateCost() {
@@ -170,13 +204,15 @@
             const electricityCost = parseFloat(document.getElementById('electricityCost').value);
             const printerWattage = parseFloat(document.getElementById('printerWattage').value);
             const failureRate = parseFloat(document.getElementById('failureRate').value) / 100;
+            const laborCost = parseFloat(document.getElementById('laborCost').value);
+            const setupTime = parseFloat(document.getElementById('setupTime').value) / 60; // Convert to hours
 
-            if ([spoolWeight, spoolCost, printWeight, electricityCost, printerWattage, failureRate].some(isNaN)) {
+            if ([spoolWeight, spoolCost, printWeight, electricityCost, printerWattage, failureRate, laborCost, setupTime].some(isNaN)) {
                 alert('Please enter valid numbers for all fields.');
                 return;
             }
 
-            const density = materials[material];
+            const density = material === 'custom' ? parseFloat(document.getElementById('customDensity').value) : materials[material];
             const spoolWeightGrams = spoolWeight * 1000;
             const costPerGram = spoolCost / spoolWeightGrams;
             const materialCost = costPerGram * printWeight;
@@ -191,13 +227,20 @@
             // cal faliure cost
             const failureCost = (materialCost + energyCost) * failureRate;
             
-            const totalCost = materialCost + energyCost + failureCost;
+            // cal labor cost
+            const totalLaborCost = (printTimeHours + setupTime) * laborCost;
+
+            const totalCost = materialCost + energyCost + failureCost + totalLaborCost;
 
             document.getElementById('materialCost').textContent = materialCost.toFixed(2);
             document.getElementById('energyCost').textContent = energyCost.toFixed(2);
             document.getElementById('failureCost').textContent = failureCost.toFixed(2);
+            document.getElementById('totalLaborCost').textContent = totalLaborCost.toFixed(2);
             document.getElementById('totalCost').textContent = totalCost.toFixed(2);
             document.getElementById('costPerGram').textContent = (totalCost / printWeight).toFixed(4);
+            document.getElementById('printTime').textContent = printTimeHours.toFixed(2);
+
+            updateChart(materialCost, energyCost, failureCost, totalLaborCost);
         }
 
         function toggleAdvancedOptions() {
@@ -212,12 +255,57 @@
             }
         }
 
-        // input and output event listeners
+        function toggleCustomMaterial() {
+            const material = document.getElementById('material').value;
+            const customMaterial = document.getElementById('customMaterial');
+            if (material === 'custom') {
+                customMaterial.classList.remove('hidden');
+            } else {
+                customMaterial.classList.add('hidden');
+            }
+        }
+
+        function updateChart(materialCost, energyCost, failureCost, laborCost) {
+            const ctx = document.getElementById('chart').getContext('2d');
+            const data = {
+                labels: ['Material Cost', 'Energy Cost', 'Failure Cost', 'Labor Cost'],
+                datasets: [{
+                    data: [materialCost, energyCost, failureCost, laborCost],
+                    backgroundColor: ['#3498db', '#2ecc71', '#e74c3c', '#f39c12']
+                }]
+            };
+
+            if (chart) {
+                chart.data = data;
+                chart.update();
+            } else {
+                chart = new Chart(ctx, {
+                    type: 'pie',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Cost Breakdown'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // event listeners
         document.querySelectorAll('input, select').forEach(element => {
             element.addEventListener('input', calculateCost);
         });
 
-        // run the calc
+        document.getElementById('material').addEventListener('change', toggleCustomMaterial);
+
+        // start calc
         calculateCost();
     </script>
 </body>
