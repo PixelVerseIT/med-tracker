@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login/Signup | 3dTools</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .form-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 400px;
+        }
+        .form-header {
+            background-color: #007bff;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        .form-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .form-body {
+            padding: 30px;
+        }
+        .nav-tabs {
+            border-bottom: none;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: #495057;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            color: #007bff;
+            background-color: transparent;
+            border-bottom: 2px solid #007bff;
+        }
+        .btn-primary {
+            padding: 10px 20px;
+        }
+        .form-text {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-header">
+            <h2>Login to 3dTools</h2>
+        </div>
+        <div class="form-body">
+            <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="signin-tab" data-bs-toggle="tab" data-bs-target="#signin" type="button" role="tab" aria-controls="signin" aria-selected="true">Sign In</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup" type="button" role="tab" aria-controls="signup" aria-selected="false">Sign Up</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="signin" role="tabpanel" aria-labelledby="signin-tab">
+                    <form>
+                        <div class="mb-3">
+                            <input type="email" class="form-control" id="signinEmail" placeholder="Email address" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" id="signinPassword" placeholder="Password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Sign In</button>
+                    </form>
+                    <div class="form-text">
+                        <a href="#" class="text-decoration-none">Forgot password?</a>
+                    </div>
+                    <p class="text-secondary mt-3" style="font-size: 0.8rem; text-align: center;">3dTools is currently in development and no guarantee is made for the safety and maintenance of your data.</p>
+                </div>
+                <div class="tab-pane fade" id="signup" role="tabpanel" aria-labelledby="signup-tab">
+                    <form>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="signupName" placeholder="Full name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control" id="signupEmail" placeholder="Email address" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" id="signupPassword" placeholder="Password" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" id="signupConfirmPassword" placeholder="Confirm password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">I agree to 3dTool's Privacy Policy & Terms and Conditions.</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+                        <p class="text-secondary mt-3" style="font-size: 0.8rem; text-align: center;">3dTools is currently in development and no guarantee is made for the safety and maintenance of your data.</p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

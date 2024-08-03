@@ -4,21 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Printing Tools Dashboard</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         .bg-gray-100 { background-color: #ffffff; }
         .bg-gray-800 { 
             background-color: #f9f9f9; 
             color: #ffffff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         .text-gray-300 { color: #57575e; }
         .text-gray-500 { color: #6b7280; }
         .text-gray-600 { color: #4b5563; }
         .text-gray-800 { color: #1f2937; }
-        .hover-bg-gray-700:hover { background-color: #4a5568; }
-        .border-gray-800 { border-color: #2d3748; }
+        .hover-bg-gray-700:hover { background-color: #d0d0d0; }
         .transform { transform: translateX(0); }
         .-translate-x-full { transform: translateX(-100%); }
         .transition-transform { transition: transform 0.3s ease-in-out; }
@@ -28,7 +26,7 @@
         .content { margin-left: 250px;}
 
         .nav-link { padding: 0.8rem 2rem; }
-        .nav-link:hover { color: #ffffff; }
+        .nav-link:hover { color: #000000; }
 
         .fas { width: 1.5rem; text-align: center;}
 
@@ -44,10 +42,12 @@
 </head>
 <body class="bg-gray-100">
     <div class="d-flex h-100">
-        <!-- main sidebar -->
+        <!-- Main sidebar -->
         <aside class="sidebar d-none d-md-flex flex-column bg-gray-800 text-white">
             <div class="d-flex align-items-center justify-content-center h-16 bg-gray-900">
-                <a class="logo" href="sidebar.html"><span class="h4 font-weight-bold mb-0">3D Print Tools</span></a>
+                <a class="logo" href="sidebar.html">
+                    <span class="h4 font-weight-bold mb-0">3D Print Tools</span>
+                </a>
             </div>
             <nav class="flex-grow-1">
                 <ul class="nav flex-column py-4">
@@ -75,10 +75,12 @@
             </nav>
         </aside>
 
-        <!-- mobile sidebar -->
+        <!-- Mobile sidebar -->
         <div id="mobileSidebar" class="fixed-top h-100 w-75 bg-gray-800 text-white transform -translate-x-full transition-transform d-md-none">
             <div class="d-flex align-items-center justify-content-center h-16 bg-gray-900">
-                <a class="logo" href="sidebar.html"><span class="h4 font-weight-bold mb-0">3D Print Tools</span></a>
+                <a class="logo" href="sidebar.html">
+                    <span class="h4 font-weight-bold mb-0">3D Print Tools</span>
+                </a>
             </div>
             <nav>
                 <ul class="nav flex-column py-4">
@@ -106,9 +108,9 @@
             </nav>
         </div>
 
-        <!-- main content -->
+        <!-- Main content -->
         <div class="d-flex flex-column flex-grow-1 overflow-hidden content">
-            <!-- header -->
+            <!-- Header -->
             <header class="d-flex align-items-center justify-content-between px-4 py-3 bg-white border-bottom border-gray-800">
                 <div class="d-flex align-items-center">
                     <button id="sidebarToggle" class="btn text-gray-500 d-md-none">
@@ -117,13 +119,15 @@
                     <h4 class="ml-4 mb-0 font-weight-semibold text-gray-800">Dashboard</h4>
                 </div>
                 <div>
-                    <button class="btn text-gray-500 hover-text-gray-600">
-                        <i class="fas fa-user mr-2"></i> Profile
-                    </button>
+                    <a href="profile.html">
+                        <button class="btn text-gray-500 hover-text-gray-600">
+                            <i class="fas fa-user mr-2"></i> Your Account
+                        </button>
+                    </a>
                 </div>
             </header>
 
-            <!-- content area -->
+            <!-- Content area -->
             <main class="flex-grow-1 overflow-auto bg-gray-100 p-4">
                 <div class="container">
                     <h1 class="mb-4 text-3xl font-weight-semibold text-gray-800">Welcome to 3D Printing Tools</h1>
