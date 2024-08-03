@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Printing Tools Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        .bg-gray-100 { background-color: #f7fafc; }
+        .bg-gray-800 { background-color: #2d3748; }
+        .bg-gray-900 { background-color: #1a202c; }
+        .text-gray-300 { color: #d1d5db; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-800 { color: #1f2937; }
+        .hover-bg-gray-700:hover { background-color: #4a5568; }
+        .border-gray-800 { border-color: #2d3748; }
+        .transform { transform: translateX(0); }
+        .-translate-x-full { transform: translateX(-100%); }
+        .transition-transform { transition: transform 0.3s ease-in-out; }
+        .h-16 { height: 4rem; }
+        .sidebar { min-width: 250px; height: 100vh; }
+        .nav-link { padding: 0.8rem 2rem; }
+        .nav-link:hover { color: #ffffff; }
+        .fas { width: 1.25rem; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="d-flex h-100">
+        <!-- main sidebar -->
+        <aside class="sidebar d-none d-md-flex flex-column bg-gray-800 text-white">
+            <div class="d-flex align-items-center justify-content-center h-16 bg-gray-900">
+                <span class="h4 font-weight-bold mb-0">3D Print Tools</span>
+            </div>
+            <nav class="flex-grow-1">
+                <ul class="nav flex-column py-4">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
+                            <i class="fas fa-calculator mr-3"></i> Cost Calculator
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
+                            <i class="fas fa-cogs mr-3"></i> Slicer Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
+                            <i class="fas fa-thermometer-half mr-3"></i> Temperature Guide
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
+                            <i class="fas fa-cubes mr-3"></i> Filament Database
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- mobile sidebar -->
+        <div id="mobileSidebar" class="fixed-top h-100 w-75 bg-gray-800 text-white transform -translate-x-full transition-transform d-md-none">
+            <div class="d-flex align-items-center justify-content-center h-16 bg-gray-900">
+                <span class="h4 font-weight-bold mb-0">3D Print Tools</span>
+            </div>
+            <nav>
+                <ul class="nav flex-column py-4">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
+                            <i class="fas fa-calculator mr-3"></i> Cost Calculator
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
+                            <i class="fas fa-cogs mr-3"></i> Slicer Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
+                            <i class="fas fa-thermometer-half mr-3"></i> Temperature Guide
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
+                            <i class="fas fa-cubes mr-3"></i> Filament Database
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- main content -->
+        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+            <!-- header -->
+            <header class="d-flex align-items-center justify-content-between px-4 py-3 bg-white border-bottom border-gray-800">
+                <div class="d-flex align-items-center">
+                    <button id="sidebarToggle" class="btn text-gray-500 d-md-none">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h4 class="ml-4 mb-0 font-weight-semibold text-gray-800">Dashboard</h4>
+                </div>
+                <div>
+                    <button class="btn text-gray-500 hover-text-gray-600">
+                        <i class="fas fa-user mr-2"></i> Profile
+                    </button>
+                </div>
+            </header>
+
+            <!-- content area -->
+            <main class="flex-grow-1 overflow-auto bg-gray-100 p-4">
+                <div class="container">
+                    <h1 class="mb-4 text-3xl font-weight-semibold text-gray-800">Welcome to 3D Printing Tools</h1>
+                    <p class="mb-3 text-gray-600">Select a tool from the sidebar to get started.</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const mobileSidebar = document.getElementById('mobileSidebar');
+
+        sidebarToggle.addEventListener('click', () => {
+            mobileSidebar.classList.toggle('-translate-x-full');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!mobileSidebar.contains(e.target) && e.target !== sidebarToggle) {
+                mobileSidebar.classList.add('-translate-x-full');
+            }
+        });
+    </script>
+    
+</body>
+</html>
