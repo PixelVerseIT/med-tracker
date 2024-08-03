@@ -9,7 +9,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f0f4f8;
@@ -95,16 +95,32 @@
         .hidden {
             display: none;
         }
-        #chart {
+        #chartContainer {
             margin-top: 20px;
             width: 100%;
+            max-width: 400px;
             height: 300px;
+            margin-left: auto;
+            margin-right: auto;
         }
         .custom-material {
             margin-top: 15px;
             padding: 15px;
             background-color: #ecf0f1;
             border-radius: 8px;
+        }
+        .flex-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .flex-item {
+            flex: 0 0 48%;
+        }
+        @media (max-width: 768px) {
+            .flex-item {
+                flex: 0 0 100%;
+            }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
@@ -113,77 +129,112 @@
     <div class="calculator">
         <h1>3dPrinterTools: Filament Cost Calculator</h1>
         
-        <div class="input-group">
-            <label for="material">Material:</label>
-            <select id="material">
-                <option value="PLA">PLA (Density: 1.24 g/cm³)</option>
-                <option value="ABS">ABS (Density: 1.04 g/cm³)</option>
-                <option value="PETG">PETG (Density: 1.27 g/cm³)</option>
-                <option value="TPU">TPU (Density: 1.21 g/cm³)</option>
-                <option value="custom">Custom Material</option>
-            </select>
-        </div>
-        
-        <div id="customMaterial" class="custom-material hidden">
-            <div class="input-group">
-                <label for="customDensity">Custom Material Density (g/cm³):</label>
-                <input type="number" id="customDensity" value="1.0" min="0" step="0.01">
-            </div>
-        </div>
+        <div class="flex-container">
+            <div class="flex-item">
+                <div class="input-group">
+                    <label for="material">Material:</label>
+                    <select id="material">
+                        <option value="PLA">PLA (Density: 1.24 g/cm³)</option>
+                        <option value="ABS">ABS (Density: 1.04 g/cm³)</option>
+                        <option value="PETG">PETG (Density: 1.27 g/cm³)</option>
+                        <option value="TPU">TPU (Density: 1.21 g/cm³)</option>
+                        <option value="Nylon">Nylon (Density: 1.14 g/cm³)</option>
+                        <option value="HIPS">HIPS (Density: 1.04 g/cm³)</option>
+                        <option value="ASA">ASA (Density: 1.07 g/cm³)</option>
+                        <option value="PC">Polycarbonate (Density: 1.20 g/cm³)</option>
+                        <option value="custom">Custom Material</option>
+                    </select>
+                </div>
+                
+                <div id="customMaterial" class="custom-material hidden">
+                    <div class="input-group">
+                        <label for="customDensity">Custom Material Density (g/cm³):</label>
+                        <input type="number" id="customDensity" value="1.0" min="0" step="0.01">
+                    </div>
+                </div>
 
-        <div class="input-group">
-            <label for="spoolWeight">Spool Weight (kg):</label>
-            <input type="number" id="spoolWeight" value="1" min="0" step="0.1">
-        </div>
-        
-        <div class="input-group">
-            <label for="spoolCost">Spool Cost ($):</label>
-            <input type="number" id="spoolCost" value="20" min="0" step="0.01">
-        </div>
-        
-        <div class="input-group">
-            <label for="printWeight">Print Weight (g):</label>
-            <input type="number" id="printWeight" value="100" min="0" step="0.1">
+                <div class="input-group">
+                    <label for="spoolWeight">Spool Weight (kg):</label>
+                    <input type="number" id="spoolWeight" value="1" min="0" step="0.1">
+                </div>
+                
+                <div class="input-group">
+                    <label for="spoolCost">Spool Cost ($):</label>
+                    <input type="number" id="spoolCost" value="20" min="0" step="0.01">
+                </div>
+            </div>
+            
+            <div class="flex-item">
+                <div class="input-group">
+                    <label for="printWeight">Print Weight (g):</label>
+                    <input type="number" id="printWeight" value="100" min="0" step="0.1">
+                </div>
+                
+                <div class="input-group">
+                    <label for="infillPercentage">Infill Percentage (%):</label>
+                    <input type="number" id="infillPercentage" value="20" min="0" max="100" step="1">
+                </div>
+                
+                <div class="input-group">
+                    <label for="printSpeed">Print Speed (mm/s):</label>
+                    <input type="number" id="printSpeed" value="60" min="1" step="1">
+                </div>
+            </div>
         </div>
         
         <button class="toggle-advanced" onclick="toggleAdvancedOptions()">Show Advanced Options</button>
         
         <div id="advancedOptions" class="advanced-options hidden">
             <h3>Advanced Options</h3>
-            <div class="input-group">
-                <label for="electricityCost">Electricity Cost ($/kWh):</label>
-                <input type="number" id="electricityCost" value="0.12" min="0" step="0.01">
-            </div>
-            <div class="input-group">
-                <label for="printerWattage">Printer Wattage (W):</label>
-                <input type="number" id="printerWattage" value="200" min="0" step="1">
-            </div>
-            <div class="input-group">
-                <label for="failureRate">Failure Rate (%):</label>
-                <input type="number" id="failureRate" value="5" min="0" max="100" step="1">
-            </div>
-            <div class="input-group">
-                <label for="laborCost">Labor Cost ($/hour):</label>
-                <input type="number" id="laborCost" value="0" min="0" step="0.01">
-            </div>
-            <div class="input-group">
-                <label for="setupTime">Setup Time (minutes):</label>
-                <input type="number" id="setupTime" value="15" min="0" step="1">
+            <div class="flex-container">
+                <div class="flex-item">
+                    <div class="input-group">
+                        <label for="electricityCost">Electricity Cost ($/kWh):</label>
+                        <input type="number" id="electricityCost" value="0.12" min="0" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label for="printerWattage">Printer Wattage (W):</label>
+                        <input type="number" id="printerWattage" value="200" min="0" step="1">
+                    </div>
+                </div>
+                <div class="flex-item">
+                    <div class="input-group">
+                        <label for="failureRate">Failure Rate (%):</label>
+                        <input type="number" id="failureRate" value="5" min="0" max="100" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="laborCost">Labor Cost ($/hour):</label>
+                        <input type="number" id="laborCost" value="0" min="0" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label for="setupTime">Setup Time (minutes):</label>
+                        <input type="number" id="setupTime" value="15" min="0" step="1">
+                    </div>
+                </div>
             </div>
         </div>
         
         <div class="result">
             <h2>Cost Breakdown:</h2>
-            <p>Material Cost: $<span id="materialCost">0.00</span></p>
-            <p>Estimated Energy Cost: $<span id="energyCost">0.00</span></p>
-            <p>Estimated Failure Cost: $<span id="failureCost">0.00</span></p>
-            <p>Labor Cost: $<span id="totalLaborCost">0.00</span></p>
-            <p class="total-cost">Total Estimated Cost: $<span id="totalCost">0.00</span></p>
-            <p>Cost per Gram: $<span id="costPerGram">0.00</span></p>
-            <p>Estimated Print Time: <span id="printTime">0</span> hours</p>
+            <div class="flex-container">
+                <div class="flex-item">
+                    <p>Material Cost: $<span id="materialCost">0.00</span></p>
+                    <p>Estimated Energy Cost: $<span id="energyCost">0.00</span></p>
+                    <p>Estimated Failure Cost: $<span id="failureCost">0.00</span></p>
+                    <p>Labor Cost: $<span id="totalLaborCost">0.00</span></p>
+                    <p class="total-cost">Total Estimated Cost: $<span id="totalCost">0.00</span></p>
+                </div>
+                <div class="flex-item">
+                    <p>Cost per Gram: $<span id="costPerGram">0.00</span></p>
+                    <p>Estimated Print Time: <span id="printTime">0</span> hours</p>
+                    <p>Material Used: <span id="materialUsed">0</span> g</p>
+                </div>
+            </div>
         </div>
 
-        <div id="chart"></div>
+        <div id="chartContainer">
+            <canvas id="costChart"></canvas>
+        </div>
     </div>
 
     <script>
@@ -193,6 +244,10 @@
             'ABS': 1.04,
             'PETG': 1.27,
             'TPU': 1.21,
+            'Nylon': 1.14,
+            'HIPS': 1.04,
+            'ASA': 1.07,
+            'PC': 1.20,
             'custom': 1.0
         };
 
@@ -201,13 +256,15 @@
             const spoolWeight = parseFloat(document.getElementById('spoolWeight').value);
             const spoolCost = parseFloat(document.getElementById('spoolCost').value);
             const printWeight = parseFloat(document.getElementById('printWeight').value);
+            const infillPercentage = parseFloat(document.getElementById('infillPercentage').value);
+            const printSpeed = parseFloat(document.getElementById('printSpeed').value);
             const electricityCost = parseFloat(document.getElementById('electricityCost').value);
             const printerWattage = parseFloat(document.getElementById('printerWattage').value);
             const failureRate = parseFloat(document.getElementById('failureRate').value) / 100;
             const laborCost = parseFloat(document.getElementById('laborCost').value);
             const setupTime = parseFloat(document.getElementById('setupTime').value) / 60; // Convert to hours
 
-            if ([spoolWeight, spoolCost, printWeight, electricityCost, printerWattage, failureRate, laborCost, setupTime].some(isNaN)) {
+            if ([spoolWeight, spoolCost, printWeight, infillPercentage, printSpeed, electricityCost, printerWattage, failureRate, laborCost, setupTime].some(isNaN)) {
                 alert('Please enter valid numbers for all fields.');
                 return;
             }
@@ -217,17 +274,20 @@
             const costPerGram = spoolCost / spoolWeightGrams;
             const materialCost = costPerGram * printWeight;
             
-            // estimate hour print time
-            const printTimeHours = (printWeight / 10) * (1 / density);
+            // est print time according to infill and speed
+            const volumeCm3 = printWeight / density;
+            const infillFactor = 1 + (infillPercentage / 100);
+            const estimatedLength = (volumeCm3 * infillFactor * 10) / 0.4; // Assuming 0.4mm layer height
+            const printTimeHours = (estimatedLength / (printSpeed * 60)) / 60;
             
-            // cal energy cost
+            // calc engry cost
             const energyConsumption = (printerWattage / 1000) * printTimeHours; // kWh
             const energyCost = energyConsumption * electricityCost;
             
-            // cal faliure cost
+            // failure cost
             const failureCost = (materialCost + energyCost) * failureRate;
             
-            // cal labor cost
+            // labor cost
             const totalLaborCost = (printTimeHours + setupTime) * laborCost;
 
             const totalCost = materialCost + energyCost + failureCost + totalLaborCost;
@@ -239,6 +299,7 @@
             document.getElementById('totalCost').textContent = totalCost.toFixed(2);
             document.getElementById('costPerGram').textContent = (totalCost / printWeight).toFixed(4);
             document.getElementById('printTime').textContent = printTimeHours.toFixed(2);
+            document.getElementById('materialUsed').textContent = printWeight.toFixed(2);
 
             updateChart(materialCost, energyCost, failureCost, totalLaborCost);
         }
@@ -265,37 +326,40 @@
             }
         }
 
-        function updateChart(materialCost, energyCost, failureCost, laborCost) {
-            const ctx = document.getElementById('chart').getContext('2d');
-            const data = {
-                labels: ['Material Cost', 'Energy Cost', 'Failure Cost', 'Labor Cost'],
-                datasets: [{
-                    data: [materialCost, energyCost, failureCost, laborCost],
-                    backgroundColor: ['#3498db', '#2ecc71', '#e74c3c', '#f39c12']
-                }]
-            };
-
-            if (chart) {
-                chart.data = data;
-                chart.update();
-            } else {
-                chart = new Chart(ctx, {
-                    type: 'pie',
-                    data: data,
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                            },
-                            title: {
-                                display: true,
-                                text: 'Cost Breakdown'
-                            }
+        function initChart() {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Material Cost', 'Energy Cost', 'Failure Cost', 'Labor Cost'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#3498db', '#2ecc71', '#e74c3c', '#f39c12']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Cost Breakdown'
                         }
                     }
-                });
+                }
+            });
+        }
+
+        function updateChart(materialCost, energyCost, failureCost, laborCost) {
+            if (!chart) {
+                initChart();
             }
+            
+            chart.data.datasets[0].data = [materialCost, energyCost, failureCost, laborCost];
+            chart.update();
         }
 
         // event listeners
@@ -303,10 +367,16 @@
             element.addEventListener('input', calculateCost);
         });
 
-        document.getElementById('material').addEventListener('change', toggleCustomMaterial);
+        document.getElementById('material').addEventListener('change', function() {
+            toggleCustomMaterial();
+            calculateCost();
+        });
 
         // start calc
-        calculateCost();
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            calculateCost();
+        });
     </script>
 </body>
 </html>
