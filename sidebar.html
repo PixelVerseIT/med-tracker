@@ -7,10 +7,13 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        .bg-gray-100 { background-color: #f7fafc; }
-        .bg-gray-800 { background-color: #2d3748; }
-        .bg-gray-900 { background-color: #1a202c; }
-        .text-gray-300 { color: #d1d5db; }
+        .bg-gray-100 { background-color: #ffffff; }
+        .bg-gray-800 { 
+            background-color: #f9f9f9; 
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .text-gray-300 { color: #57575e; }
         .text-gray-500 { color: #6b7280; }
         .text-gray-600 { color: #4b5563; }
         .text-gray-800 { color: #1f2937; }
@@ -20,12 +23,23 @@
         .-translate-x-full { transform: translateX(-100%); }
         .transition-transform { transition: transform 0.3s ease-in-out; }
         .h-16 { height: 4rem; }
-        .sidebar { min-width: 250px; height: 100vh; }
+
+        .sidebar { min-width: 250px; height: 100vh; position: fixed;}
+        .content { margin-left: 250px;}
+
         .nav-link { padding: 0.8rem 2rem; }
         .nav-link:hover { color: #ffffff; }
-        .fas { width: 1.25rem; }
-        .logo { color: #ffffff; text-decoration: none;}
-        .logo:hover { color: #ffffff; text-decoration: none;}
+
+        .fas { width: 1.5rem; text-align: center;}
+
+        .logo { color: #000000; text-decoration: none; margin-top: 10px;}
+        .logo:hover { color: #000000; text-decoration: none;}
+        @media screen and (max-width: 768px) {
+            .sidebar { display: none; }
+            .content { margin-left: 0; }
+            .d-md-none { display: block; }
+            .d-none { display: none; } 
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -39,22 +53,22 @@
                 <ul class="nav flex-column py-4">
                     <li class="nav-item">
                         <a href="/3dtools-filamentcalc.html" class="nav-link text-gray-300 hover-bg-gray-700">
-                            <i class="fas fa-calculator mr-3"></i> Cost Calculator
+                            <i class="fas fa-calculator fa-xl mr-3"></i> Cost Calculator
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
-                            <i class="fas fa-cogs mr-3"></i> Slicer Settings
+                            <i class="fas fa-cogs fa-xl mr-3"></i> Slicer Settings
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
-                            <i class="fas fa-thermometer-half mr-3"></i> Temperature Guide
+                            <i class="fas fa-thermometer-half fa-xl mr-3"></i> Temperature Guide
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
-                            <i class="fas fa-cubes mr-3"></i> Filament Database
+                            <i class="fas fa-cubes fa-xl mr-3"></i> Filament Database
                         </a>
                     </li>
                 </ul>
@@ -70,22 +84,22 @@
                 <ul class="nav flex-column py-4">
                     <li class="nav-item">
                         <a href="/3dtools-filamentcalc.html" class="nav-link text-gray-300 hover-bg-gray-700">
-                            <i class="fas fa-calculator mr-3"></i> Cost Calculator
+                            <i class="fas fa-calculator fa-xl mr-3"></i> Cost Calculator
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
-                            <i class="fas fa-cogs mr-3"></i> Slicer Settings
+                            <i class="fas fa-cogs fa-xl mr-3"></i> Slicer Settings
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
-                            <i class="fas fa-thermometer-half mr-3"></i> Temperature Guide
+                            <i class="fas fa-thermometer-half fa-xl mr-3"></i> Temperature Guide
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="#" class="nav-link text-gray-300 hover-bg-gray-700">
-                            <i class="fas fa-cubes mr-3"></i> Filament Database
+                            <i class="fas fa-cubes fa-xl mr-3"></i> Filament Database
                         </a>
                     </li>
                 </ul>
@@ -93,7 +107,7 @@
         </div>
 
         <!-- main content -->
-        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+        <div class="d-flex flex-column flex-grow-1 overflow-hidden content">
             <!-- header -->
             <header class="d-flex align-items-center justify-content-between px-4 py-3 bg-white border-bottom border-gray-800">
                 <div class="d-flex align-items-center">
@@ -119,8 +133,6 @@
         </div>
     </div>
 
-    
-
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -129,7 +141,8 @@
         const sidebarToggle = document.getElementById('sidebarToggle');
         const mobileSidebar = document.getElementById('mobileSidebar');
 
-        sidebarToggle.addEventListener('click', () => {
+        sidebarToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
             mobileSidebar.classList.toggle('-translate-x-full');
         });
 
@@ -139,6 +152,5 @@
             }
         });
     </script>
-    
 </body>
 </html>
