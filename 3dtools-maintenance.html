@@ -236,13 +236,64 @@
     </script>
 
     <script>
+        // default tasks
+        let scheduledTasks = JSON.parse(localStorage.getItem('scheduledTasks')) || [
+            { name: "Oil X-axis", frequency: 30, lastCompleted: null },
+            { name: "Tighten screws", frequency: 90, lastCompleted: null }
+        ];
+
+        function saveTasks() {
+            localStorage.setItem('scheduledTasks', JSON.stringify(scheduledTasks));
+        }
+
+        function updateTasksTable() {
+            const tbody = document.querySelector('#scheduledTasks tbody');
+            tbody.innerHTML = '';
+            const now = new Date();
+
+            scheduledTasks.forEach((task, index) => {
+                const lastCompleted = task.lastCompleted ? new Date(task.lastCompleted) : null;
+                const nextDue = lastCompleted ? new Date(lastCompleted.getTime() + task.frequency * 24 * 60 * 60 * 1000) : new Date();
+                const isOverdue = nextDue < now;
+
+                const row = `
+                    <tr${isOverdue ? ' class="task-overdue"' : ''}>
+                        <td>${task.name}</td>
+                        <td>Every ${task.frequency} days</td>
+                        <td>${lastCompleted ? lastCompleted.toLocaleDateString() : 'Never'}</td>
+                        <td>${nextDue.toLocaleDateString()}</td>
+                        <td><button class="btn btn-sm btn-success" onclick="completeTask(${index})">Complete</button></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function completeTask(index) {
+            scheduledTasks[index].lastCompleted = new Date().toISOString();
+            saveTasks();
+            updateTasksTable();
+            logMaintenance(scheduledTasks[index].name, "Completed scheduled task");
+        }
+
+        document.getElementById('saveTask').addEventListener('click', function() {
+            const name = document.getElementById('taskName').value;
+            const frequency = parseInt(document.getElementById('taskFrequency').value);
+            scheduledTasks.push({ name, frequency, lastCompleted: null });
+            saveTasks();
+            updateTasksTable();
+            $('#addTaskModal').modal('hide');
+        });
+
         document.getElementById('maintenanceForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
             const task = document.getElementById('maintenanceTask').value;
             const date = document.getElementById('maintenanceDate').value;
             const notes = document.getElementById('maintenanceNotes').value;
+            logMaintenance(task, notes, date);
+        });
 
+        function logMaintenance(task, notes, date = new Date().toISOString().split('T')[0]) {
             const historyEntry = `
                 <tr>
                     <td>${date}</td>
@@ -250,13 +301,30 @@
                     <td>${notes}</td>
                 </tr>
             `;
-
-            document.getElementById('maintenanceHistory').innerHTML += historyEntry;
+            document.getElementById('maintenanceHistory').innerHTML = historyEntry + document.getElementById('maintenanceHistory').innerHTML;
 
             // Clear form fields
             document.getElementById('maintenanceTask').value = '';
             document.getElementById('maintenanceDate').value = '';
             document.getElementById('maintenanceNotes').value = '';
+
+            // localstorage
+            const history = JSON.parse(localStorage.getItem('maintenanceHistory') || '[]');
+            history.unshift({ date, task, notes });
+            localStorage.setItem('maintenanceHistory', JSON.stringify(history));
+        }
+
+        // Initial load
+        updateTasksTable();
+        const history = JSON.parse(localStorage.getItem('maintenanceHistory') || '[]');
+        history.forEach(entry => {
+            document.getElementById('maintenanceHistory').innerHTML += `
+                <tr>
+                    <td>${entry.date}</td>
+                    <td>${entry.task}</td>
+                    <td>${entry.notes}</td>
+                </tr>
+            `;
         });
     </script>
 </body>
