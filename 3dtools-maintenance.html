@@ -564,6 +564,76 @@
             });
         }
 
+        function sortTasks() {
+            const sortBy = document.getElementById('sortBy').value;
+            const tbody = document.querySelector('#scheduledTasks tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            rows.sort((a, b) => {
+                let aValue, bValue;
+                switch (sortBy) {
+                    case 'name':
+                        aValue = a.querySelector('td:first-child').textContent;
+                        bValue = b.querySelector('td:first-child').textContent;
+                        return aValue.localeCompare(bValue);
+                    case 'category':
+                        aValue = a.querySelector('td:nth-child(2)').textContent;
+                        bValue = b.querySelector('td:nth-child(2)').textContent;
+                        return aValue.localeCompare(bValue);
+                    case 'nextDue':
+                        aValue = new Date(a.querySelector('td:nth-child(5)').textContent);
+                        bValue = new Date(b.querySelector('td:nth-child(5)').textContent);
+                        return aValue - bValue;
+                }
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Add export functionality
+        document.getElementById('exportData').addEventListener('click', exportData);
+
+        function exportData() {
+            const tasks = JSON.parse(localStorage.getItem('scheduledTasks') || '[]');
+            const history = JSON.parse(localStorage.getItem('maintenanceHistory') || '[]');
+            const data = {
+                scheduledTasks: tasks,
+                maintenanceHistory: history
+            };
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'maintenance_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Add import functionality
+        document.getElementById('importData').addEventListener('change', importData);
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        localStorage.setItem('scheduledTasks', JSON.stringify(data.scheduledTasks));
+                        localStorage.setItem('maintenanceHistory', JSON.stringify(data.maintenanceHistory));
+                        init(); // Reinitialize the app with the imported data
+                        alert('Data imported successfully!');
+                    } catch (error) {
+                        alert('Error importing data. Please make sure the file is in the correct format.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
     </script>
 </body>
 </html>
