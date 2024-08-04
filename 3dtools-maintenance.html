@@ -235,6 +235,29 @@
         });
     </script>
 
-    
+    <script>
+        document.getElementById('maintenanceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const task = document.getElementById('maintenanceTask').value;
+            const date = document.getElementById('maintenanceDate').value;
+            const notes = document.getElementById('maintenanceNotes').value;
+
+            const historyEntry = `
+                <tr>
+                    <td>${date}</td>
+                    <td>${task}</td>
+                    <td>${notes}</td>
+                </tr>
+            `;
+
+            document.getElementById('maintenanceHistory').innerHTML += historyEntry;
+
+            // Clear form fields
+            document.getElementById('maintenanceTask').value = '';
+            document.getElementById('maintenanceDate').value = '';
+            document.getElementById('maintenanceNotes').value = '';
+        });
+    </script>
 </body>
 </html>
