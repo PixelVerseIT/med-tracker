@@ -47,6 +47,7 @@
         .task-due-soon { color: #ffc107; font-weight: bold; }
         .chart-container { height: 300px; }
     </style>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 </head>
 <body class="bg-gray-100">
@@ -180,10 +181,10 @@
                     </div>
                 </div>
 
-                <!-- ad-hoc maintenance Form -->
+                <!-- ad-hoc(unplanned) maintenance Form -->
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h2 class="card-title">Log Ad-hoc Maintenance</h2>
+                        <h2 class="card-title">Log Unplanned Maintenance</h2>
                         <form id="maintenanceForm">
                             <div class="form-row">
                                 <div class="form-group col-md-6">
@@ -288,8 +289,6 @@
         </div>
     </div>
 
-    
-
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -313,9 +312,9 @@
         // default tasks
         let scheduledTasks = JSON.parse(localStorage.getItem('scheduledTasks')) || [
             { name: "Oil X-axis", category: "Mechanical", frequency: 30, frequencyUnit: "days", lastCompleted: null },
-            { name: "Tighten screws", category: "Mechanical", frequency: 3, frequencyUnit: "months", lastCompleted: null },
-            { name: "Clean build plate", category: "Cleaning", frequency: 1, frequencyUnit: "weeks", lastCompleted: null },
-            { name: "Update firmware", category: "Firmware", frequency: 6, frequencyUnit: "months", lastCompleted: null }
+            { name: "Calibrate bed level", category: "Mechanical", frequency: 7, frequencyUnit: "days", lastCompleted: null },
+            { name: "Update firmware", category: "Firmware", frequency: 6, frequencyUnit: "months", lastCompleted: null },
+            { name: "Clean nozzle", category: "Cleaning", frequency: 14, frequencyUnit: "days", lastCompleted: null },
         ];
 
         function saveTasks() {
@@ -357,8 +356,8 @@
                         <td>${task.lastCompleted ? new Date(task.lastCompleted).toLocaleDateString() : 'Never'}</td>
                         <td>${nextDue.toLocaleDateString()}</td>
                         <td>
-                            <button class="btn btn-sm btn-success" onclick="completeTask(${index})">Complete</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteTask(${index})">Delete</button>
+                            <button class="btn btn-sm btn-success" onclick="completeTask(${index})">✅</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTask(${index})">🗑️</button>
                         </td>
                     </tr>
                 `;
@@ -472,6 +471,99 @@
                 upcomingTasksList.appendChild(listItem);
             });
         }
+
+        function updateMaintenanceChart() {
+            const ctx = document.getElementById('maintenanceChart').getContext('2d');
+            const history = JSON.parse(localStorage.getItem('maintenanceHistory') || '[]');
+            
+            const categoryCounts = history.reduce((acc, entry) => {
+                acc[entry.category] = (acc[entry.category] || 0) + 1;
+                return acc;
+            }, {});
+
+            const data = {
+                labels: Object.keys(categoryCounts),
+                datasets: [{
+                    data: Object.values(categoryCounts),
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF'
+                    ]
+                }]
+            };
+
+            if (window.maintenanceChart) {
+                window.maintenanceChart.destroy();
+            }
+
+            window.maintenanceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Maintenance by Category'
+                        }
+                    }
+                }
+            });
+        }
+
+        // start application
+        function init() {
+            updateTasksTable();
+            updateMaintenanceHistory();
+            updateMaintenanceChart();
+
+            // notifications
+            if ("Notification" in window) {
+                Notification.requestPermission().then(function (permission) {
+                    if (permission === "granted") {
+                        checkForDueTasks();
+                        setInterval(checkForDueTasks, 60 * 60 * 1000); // check every hour
+                    }
+                });
+            }
+        }
+
+        function checkForDueTasks() {
+            const now = new Date();
+            scheduledTasks.forEach(task => {
+                const nextDue = getNextDueDate(task);
+                if (nextDue <= now) {
+                    new Notification("Maintenance Task Due!!", {
+                        body: `The task "${task.name}" is due for maintenance.`,
+                        icon: "https://static-00.iconduck.com/assets.00/notification-icon-1837x2048-zgg2xntn.pngg"
+                    });
+                }
+            });
+        }
+
+        // run when page loads
+        window.addEventListener('load', init);
+
+        // event listeners for filter & sort functionality
+        document.getElementById('filterCategory').addEventListener('change', filterTasks);
+        document.getElementById('sortBy').addEventListener('change', sortTasks);
+
+        function filterTasks() {
+            const category = document.getElementById('filterCategory').value;
+            const rows = document.querySelectorAll('#scheduledTasks tbody tr');
+            rows.forEach(row => {
+                const rowCategory = row.querySelector('td:nth-child(2)').textContent;
+                row.style.display = category === 'All' || rowCategory === category ? '' : 'none';
+            });
+        }
+
     </script>
 </body>
 </html>
