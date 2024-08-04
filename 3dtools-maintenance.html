@@ -220,6 +220,21 @@
                 <div class="card">
                     <div class="card-body">
                         <h2 class="card-title">Maintenance History</h2>
+                        <div class="mb-3">
+                            <select id="filterCategory" class="form-control d-inline-block w-auto mr-2">
+                                <option value="All">All Categories</option>
+                                <option value="Mechanical">Mechanical</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Firmware">Firmware</option>
+                                <option value="Cleaning">Cleaning</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <select id="sortBy" class="form-control d-inline-block w-auto">
+                                <option value="name">Sort by Name</option>
+                                <option value="category">Sort by Category</option>
+                                <option value="nextDue">Sort by Next Due Date</option>
+                            </select>
+                        </div>
                         <table class="table table-hover" id="maintenanceHistory">
                             <thead>
                                 <tr>
@@ -236,6 +251,14 @@
                         </table>
                     </div>
                 </div>
+
+                <div class="mb-3">
+                    <button id="exportData" class="btn btn-secondary mr-2">Export Data</button>
+                    <input type="file" id="importData" accept=".json" class="d-none">
+                    <label for="importData" class="btn btn-secondary mb-0">Import Data</label>
+                </div>
+
+
             </main>
         </div>
     </div>
@@ -473,7 +496,11 @@
         }
 
         function updateMaintenanceChart() {
-            const ctx = document.getElementById('maintenanceChart').getContext('2d');
+            const ctx = document.getElementById('maintenanceChart');
+            if (!ctx) {
+                console.error('Cannot find maintenanceChart element');
+                return;
+            }
             const history = JSON.parse(localStorage.getItem('maintenanceHistory') || '[]');
             
             const categoryCounts = history.reduce((acc, entry) => {
@@ -495,7 +522,7 @@
                 }]
             };
 
-            if (window.maintenanceChart) {
+            if (window.maintenanceChart instanceof Chart) {
                 window.maintenanceChart.destroy();
             }
 
@@ -518,21 +545,50 @@
             });
         }
 
-        // start application
+        
+        function setupEventListeners() {
+            addEventListenerIfElementExists('filterCategory', 'change', filterTasks);
+            addEventListenerIfElementExists('sortBy', 'change', sortTasks);
+            addEventListenerIfElementExists('exportData', 'click', exportDataFunction);
+            addEventListenerIfElementExists('importData', 'change', importDataFunction);
+        }
+
+        // Initialize the application
         function init() {
             updateTasksTable();
             updateMaintenanceHistory();
             updateMaintenanceChart();
+            setupEventListeners();
 
-            // notifications
+            // Set up notifications
             if ("Notification" in window) {
                 Notification.requestPermission().then(function (permission) {
                     if (permission === "granted") {
                         checkForDueTasks();
-                        setInterval(checkForDueTasks, 60 * 60 * 1000); // check every hour
+                        setInterval(checkForDueTasks, 60 * 60 * 1000); // Check every hour
                     }
                 });
             }
+        }
+
+        // Add event listeners for filter and sort functionality
+        const filterCategory = document.getElementById('filterCategory');
+        const sortBy = document.getElementById('sortBy');
+        const exportData = document.getElementById('exportData');
+        const importData = document.getElementById('importData');
+
+        if (filterCategory) filterCategory.addEventListener('change', filterTasks);
+        if (sortBy) sortBy.addEventListener('change', sortTasks);
+        if (exportData) exportData.addEventListener('click', exportDataFunction);
+        if (importData) importData.addEventListener('change', importDataFunction);
+        
+        function filterTasks() {
+            const category = document.getElementById('filterCategory').value;
+            const rows = document.querySelectorAll('#scheduledTasks tbody tr');
+            rows.forEach(row => {
+                const rowCategory = row.querySelector('td:nth-child(2)').textContent;
+                row.style.display = category === 'All' || rowCategory === category ? '' : 'none';
+            });
         }
 
         function checkForDueTasks() {
@@ -590,10 +646,7 @@
             rows.forEach(row => tbody.appendChild(row));
         }
 
-        // Add export functionality
-        document.getElementById('exportData').addEventListener('click', exportData);
-
-        function exportData() {
+        function exportDataFunction() {
             const tasks = JSON.parse(localStorage.getItem('scheduledTasks') || '[]');
             const history = JSON.parse(localStorage.getItem('maintenanceHistory') || '[]');
             const data = {
@@ -612,10 +665,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // Add import functionality
-        document.getElementById('importData').addEventListener('change', importData);
-
-        function importData(event) {
+        function importDataFunction(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -633,6 +683,9 @@
                 reader.readAsText(file);
             }
         }
+
+        // Run the initialization function when the page loads
+        window.addEventListener('load', init);
 
     </script>
 </body>
