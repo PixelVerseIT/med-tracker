@@ -127,58 +127,106 @@
 
             <!-- content area -->
             <main class="flex-grow-1 overflow-auto p-4">
-                <div class="container">
-
-                    <!-- scheduled tasks Section -->
-                    <h3>Scheduled Tasks</h3>
-                    <table class="table" id="scheduledTasks">
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Frequency</th>
-                                <th>Last Completed</th>
-                                <th>Next Due</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- shceduled tasks here -->
-                        </tbody>
-                    </table>
-                    <button class="btn btn-primary mb-4" data-toggle="modal" data-target="#addTaskModal">Add Scheduled Task</button>
-
-                    <!-- ad-hoc aaintenance Form -->
-                    <h3>Log Ad-hoc Maintenance</h3>
-                    <form id="maintenanceForm" class="mb-4">
-                        <div class="form-group">
-                            <label for="maintenanceTask">Maintenance Task</label>
-                            <input type="text" class="form-control" id="maintenanceTask" required>
+                
+                <!-- Dashboard -->
+                <div class="row mb-4">
+                    <div class="col-12 col-lg-6 mb-4 mb-lg-0">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Maintenance Overview</h5>
+                                <canvas id="maintenanceChart"></canvas>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="maintenanceDate">Date</label>
-                            <input type="date" class="form-control" id="maintenanceDate" required>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Upcoming Tasks</h5>
+                                <ul id="upcomingTasks" class="list-group list-group-flush">
+                                    <!-- Upcoming tasks here -->
+                                </ul>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="maintenanceNotes">Notes</label>
-                            <textarea class="form-control" id="maintenanceNotes" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Log Maintenance</button>
-                    </form>
+                    </div>
+                </div>
 
-                    <!-- maintenance History -->
-                    <h3>Maintenance History</h3>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Task</th>
-                                <th>Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody id="maintenanceHistory">
-                            <!-- maintenance entries here -->
-                        </tbody>
-                    </table>
+                <!-- scheduled Tasks Section -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Scheduled Tasks</h2>
+                        <table class="table table-hover" id="scheduledTasks">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Category</th>
+                                    <th>Frequency</th>
+                                    <th>Last Completed</th>
+                                    <th>Next Due</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- scheduled tasks here -->
+                            </tbody>
+                        </table>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#addTaskModal">Add Scheduled Task</button>
+                    </div>
+                </div>
+
+                <!-- ad-hoc maintenance Form -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Log Ad-hoc Maintenance</h2>
+                        <form id="maintenanceForm">
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="maintenanceTask">Maintenance Task</label>
+                                    <input type="text" class="form-control" id="maintenanceTask" required>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="maintenanceCategory">Category</label>
+                                    <select class="form-control" id="maintenanceCategory" required>
+                                        <option value="">Select category</option>
+                                        <option value="Mechanical">Mechanical</option>
+                                        <option value="Electrical">Electrical</option>
+                                        <option value="Firmware">Firmware</option>
+                                        <option value="Cleaning">Cleaning</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="maintenanceDate">Date</label>
+                                    <input type="date" class="form-control" id="maintenanceDate" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="maintenanceNotes">Notes</label>
+                                <textarea class="form-control" id="maintenanceNotes" rows="3"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Log Maintenance</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- maintenance History -->
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Maintenance History</h2>
+                        <table class="table table-hover" id="maintenanceHistory">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Task</th>
+                                    <th>Category</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- maintenance entries here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>
@@ -201,8 +249,27 @@
                             <input type="text" class="form-control" id="taskName" required>
                         </div>
                         <div class="form-group">
-                            <label for="taskFrequency">Frequency (in days)</label>
-                            <input type="number" class="form-control" id="taskFrequency" required>
+                            <label for="taskCategory">Category</label>
+                            <select class="form-control" id="taskCategory" required>
+                                <option value="Mechanical">Mechanical</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Firmware">Firmware</option>
+                                <option value="Cleaning">Cleaning</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskFrequency">Frequency</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="taskFrequency" required min="1">
+                                <div class="input-group-append">
+                                    <select class="form-control" id="taskFrequencyUnit">
+                                        <option value="days">Days</option>
+                                        <option value="weeks">Weeks</option>
+                                        <option value="months">Months</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
