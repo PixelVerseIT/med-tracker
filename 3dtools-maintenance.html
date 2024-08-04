@@ -142,7 +142,9 @@
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Maintenance Overview</h5>
-                                <canvas id="maintenanceChart"></canvas>
+                                <div class="chart-container" style="position: relative; height:300px; width:100%">
+                                    <canvas id="maintenanceChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -220,6 +222,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h2 class="card-title">Maintenance History</h2>
+
                         <div class="mb-3">
                             <select id="filterCategory" class="form-control d-inline-block w-auto mr-2">
                                 <option value="All">All Categories</option>
@@ -235,6 +238,7 @@
                                 <option value="nextDue">Sort by Next Due Date</option>
                             </select>
                         </div>
+                        
                         <table class="table table-hover" id="maintenanceHistory">
                             <thead>
                                 <tr>
@@ -249,16 +253,14 @@
                                 <!-- maintenance entries here -->
                             </tbody>
                         </table>
+
+                        <button id="exportData" class="btn btn-secondary mb-3">Export Data</button>
+
+                        <label for="importData" class="btn btn-secondary mb-3 ml-2">Import Data</label>
+                        <input type="file" id="importData" style="display: none;" accept=".json">
+
                     </div>
                 </div>
-
-                <div class="mb-3">
-                    <button id="exportData" class="btn btn-secondary mr-2">Export Data</button>
-                    <input type="file" id="importData" accept=".json" class="d-none">
-                    <label for="importData" class="btn btn-secondary mb-0">Import Data</label>
-                </div>
-
-
             </main>
         </div>
     </div>
@@ -496,28 +498,46 @@
         }
 
         function updateMaintenanceChart() {
-            const ctx = document.getElementById('maintenanceChart');
-            if (!ctx) {
-                console.error('Cannot find maintenanceChart element');
-                return;
-            }
+            const ctx = document.getElementById('maintenanceChart').getContext('2d');
             const history = JSON.parse(localStorage.getItem('maintenanceHistory') || '[]');
             
+            console.log('Maintenance history:', history); // Debugging
+
             const categoryCounts = history.reduce((acc, entry) => {
                 acc[entry.category] = (acc[entry.category] || 0) + 1;
                 return acc;
             }, {});
 
+            console.log('Category counts:', categoryCounts); // Debugging
+
+            const labels = Object.keys(categoryCounts);
+            const dataValues = Object.values(categoryCounts);
+
+            console.log('Chart labels:', labels); // Debugging
+            console.log('Chart data:', dataValues); // Debugging
+
+            // check if there is any data
+            if (labels.length === 0) {
+                console.log('No data available for the chart');
+                // clear chart if data exists
+                if (window.maintenanceChart instanceof Chart) {
+                    window.maintenanceChart.destroy();
+                }
+                // display a message in chart area if no data
+                ctx.font = '20px Arial';
+                ctx.fillStyle = 'gray';
+                ctx.textAlign = 'center';
+                ctx.fillText('No maintenance data available', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+
             const data = {
-                labels: Object.keys(categoryCounts),
+                labels: labels,
                 datasets: [{
-                    data: Object.values(categoryCounts),
+                    data: dataValues,
                     backgroundColor: [
-                        '#FF6384',
-                        '#36A2EB',
-                        '#FFCE56',
-                        '#4BC0C0',
-                        '#9966FF'
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                        '#FF9F40', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'
                     ]
                 }]
             };
@@ -543,52 +563,25 @@
                     }
                 }
             });
-        }
 
+            console.log('Chart created:', window.maintenanceChart); // Debugging
+        }
         
-        function setupEventListeners() {
-            addEventListenerIfElementExists('filterCategory', 'change', filterTasks);
-            addEventListenerIfElementExists('sortBy', 'change', sortTasks);
-            addEventListenerIfElementExists('exportData', 'click', exportDataFunction);
-            addEventListenerIfElementExists('importData', 'change', importDataFunction);
-        }
-
-        // Initialize the application
+        // start application
         function init() {
             updateTasksTable();
             updateMaintenanceHistory();
             updateMaintenanceChart();
-            setupEventListeners();
 
-            // Set up notifications
+            // notifications
             if ("Notification" in window) {
                 Notification.requestPermission().then(function (permission) {
                     if (permission === "granted") {
                         checkForDueTasks();
-                        setInterval(checkForDueTasks, 60 * 60 * 1000); // Check every hour
+                        setInterval(checkForDueTasks, 60 * 60 * 1000); // check every hour
                     }
                 });
             }
-        }
-
-        // Add event listeners for filter and sort functionality
-        const filterCategory = document.getElementById('filterCategory');
-        const sortBy = document.getElementById('sortBy');
-        const exportData = document.getElementById('exportData');
-        const importData = document.getElementById('importData');
-
-        if (filterCategory) filterCategory.addEventListener('change', filterTasks);
-        if (sortBy) sortBy.addEventListener('change', sortTasks);
-        if (exportData) exportData.addEventListener('click', exportDataFunction);
-        if (importData) importData.addEventListener('change', importDataFunction);
-        
-        function filterTasks() {
-            const category = document.getElementById('filterCategory').value;
-            const rows = document.querySelectorAll('#scheduledTasks tbody tr');
-            rows.forEach(row => {
-                const rowCategory = row.querySelector('td:nth-child(2)').textContent;
-                row.style.display = category === 'All' || rowCategory === category ? '' : 'none';
-            });
         }
 
         function checkForDueTasks() {
@@ -646,7 +639,10 @@
             rows.forEach(row => tbody.appendChild(row));
         }
 
-        function exportDataFunction() {
+        // Add export functionality
+        document.getElementById('exportData').addEventListener('click', exportData);
+
+        function exportData() {
             const tasks = JSON.parse(localStorage.getItem('scheduledTasks') || '[]');
             const history = JSON.parse(localStorage.getItem('maintenanceHistory') || '[]');
             const data = {
@@ -665,7 +661,10 @@
             URL.revokeObjectURL(url);
         }
 
-        function importDataFunction(event) {
+        // Add import functionality
+        document.getElementById('importData').addEventListener('change', importData);
+
+        function importData(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -683,9 +682,6 @@
                 reader.readAsText(file);
             }
         }
-
-        // Run the initialization function when the page loads
-        window.addEventListener('load', init);
 
     </script>
 </body>
