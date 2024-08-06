@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Manager</title>
-
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,15 +20,16 @@
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        h1, h2 {
+        h1, h2, h3 {
             color: #333;
         }
         form {
             margin-bottom: 20px;
         }
-        input[type="text"] {
-            width: 70%;
+        input[type="text"], textarea {
+            width: 100%;
             padding: 10px;
+            margin-bottom: 10px;
             font-size: 16px;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -42,21 +42,31 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        #projectList, #taskList {
+        #projectList, .taskList, .subtaskList {
             list-style-type: none;
             padding: 0;
         }
-        .project, .task {
+        .project, .task, .subtask {
             background: #f9f9f9;
-            padding: 10px;
+            padding: 15px;
             margin-bottom: 10px;
             border-radius: 4px;
         }
-        .project h3 {
-            margin-top: 0;
-        }
-        .task {
+        .task, .subtask {
             margin-left: 20px;
+            border-left: 3px solid #5cb85c;
+        }
+        .subtask {
+            margin-left: 40px;
+            border-left-color: #5bc0de;
+        }
+        .taskHeader, .subtaskHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .taskDetails, .subtaskForm {
+            margin-top: 10px;
         }
         .hidden {
             display: none;
@@ -105,9 +115,10 @@
                 const li = document.createElement('li');
                 li.className = 'project';
                 li.innerHTML = `
-                    <h3>${project.name}</h3>
+                    <h2>${project.name}</h2>
                     <form class="taskForm">
                         <input type="text" class="taskInput" placeholder="Enter a new task" required>
+                        <textarea class="taskDescription" placeholder="Task description"></textarea>
                         <button type="submit">Add Task</button>
                     </form>
                     <ul class="taskList"></ul>
@@ -115,24 +126,29 @@
 
                 const taskForm = li.querySelector('.taskForm');
                 const taskInput = li.querySelector('.taskInput');
+                const taskDescription = li.querySelector('.taskDescription');
                 const taskList = li.querySelector('.taskList');
 
                 taskForm.addEventListener('submit', (e) => {
                     e.preventDefault();
                     if (taskInput.value.trim()) {
-                        addTask(project, taskInput.value, taskList);
+                        addTask(project, taskInput.value, taskDescription.value, taskList);
                         taskInput.value = '';
+                        taskDescription.value = '';
                     }
                 });
 
                 projectList.appendChild(li);
             }
 
-            function addTask(project, taskName, taskList) {
+            function addTask(project, taskName, taskDescription, taskList) {
                 const task = {
                     id: Date.now(),
                     name: taskName,
-                    completed: false
+                    description: taskDescription,
+                    completed: false,
+                    notes: '',
+                    subtasks: []
                 };
                 project.tasks.push(task);
                 renderTask(task, taskList);
@@ -142,8 +158,20 @@
                 const li = document.createElement('li');
                 li.className = 'task';
                 li.innerHTML = `
-                    <input type="checkbox" ${task.completed ? 'checked' : ''}>
-                    <span>${task.name}</span>
+                    <div class="taskHeader">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''}>
+                        <h3>${task.name}</h3>
+                        <button class="toggleDetails">Details</button>
+                    </div>
+                    <div class="taskDetails hidden">
+                        <p><strong>Description:</strong> ${task.description}</p>
+                        <textarea class="taskNotes" placeholder="Add notes here">${task.notes}</textarea>
+                        <form class="subtaskForm">
+                            <input type="text" class="subtaskInput" placeholder="Enter a new subtask" required>
+                            <button type="submit">Add Subtask</button>
+                        </form>
+                        <ul class="subtaskList"></ul>
+                    </div>
                 `;
 
                 const checkbox = li.querySelector('input[type="checkbox"]');
@@ -151,7 +179,58 @@
                     task.completed = checkbox.checked;
                 });
 
+                const toggleDetails = li.querySelector('.toggleDetails');
+                const taskDetails = li.querySelector('.taskDetails');
+                toggleDetails.addEventListener('click', () => {
+                    taskDetails.classList.toggle('hidden');
+                });
+
+                const taskNotes = li.querySelector('.taskNotes');
+                taskNotes.addEventListener('input', () => {
+                    task.notes = taskNotes.value;
+                });
+
+                const subtaskForm = li.querySelector('.subtaskForm');
+                const subtaskInput = li.querySelector('.subtaskInput');
+                const subtaskList = li.querySelector('.subtaskList');
+
+                subtaskForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (subtaskInput.value.trim()) {
+                        addSubtask(task, subtaskInput.value, subtaskList);
+                        subtaskInput.value = '';
+                    }
+                });
+
                 taskList.appendChild(li);
+            }
+
+            function addSubtask(task, subtaskName, subtaskList) {
+                const subtask = {
+                    id: Date.now(),
+                    name: subtaskName,
+                    completed: false
+                };
+                task.subtasks.push(subtask);
+                renderSubtask(subtask, subtaskList);
+            }
+
+            function renderSubtask(subtask, subtaskList) {
+                const li = document.createElement('li');
+                li.className = 'subtask';
+                li.innerHTML = `
+                    <div class="subtaskHeader">
+                        <input type="checkbox" ${subtask.completed ? 'checked' : ''}>
+                        <span>${subtask.name}</span>
+                    </div>
+                `;
+
+                const checkbox = li.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', () => {
+                    subtask.completed = checkbox.checked;
+                });
+
+                subtaskList.appendChild(li);
             }
         });
     </script>
