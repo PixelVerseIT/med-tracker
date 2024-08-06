@@ -21,95 +21,139 @@
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        h1 {
-            text-align: center;
+        h1, h2 {
             color: #333;
         }
-        #taskForm {
-            display: flex;
+        form {
             margin-bottom: 20px;
         }
-        #taskInput {
-            flex-grow: 1;
+        input[type="text"] {
+            width: 70%;
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ddd;
-            border-radius: 4px 0 0 4px;
+            border-radius: 4px;
         }
-        #addTask {
+        button {
             padding: 10px 15px;
-            background: #5caab8;
+            background: #5cb85c;
             color: white;
             border: none;
-            border-radius: 0 4px 4px 0;
+            border-radius: 4px;
             cursor: pointer;
         }
-        #taskList {
+        #projectList, #taskList {
             list-style-type: none;
             padding: 0;
         }
-        #taskList li {
+        .project, .task {
             background: #f9f9f9;
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-        .deleteTask {
-            background: #d9534f;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
+        .project h3 {
+            margin-top: 0;
+        }
+        .task {
+            margin-left: 20px;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>Project Manager</h1>
-        <p>Easily manage your projects and tasks!</p>
-
-        <form id="taskForm">
-            <input type="text" id="taskInput" placeholder="Enter a new task" required>
-            <button type="submit" id="addTask">Add Task</button>
+        
+        <form id="projectForm">
+            <input type="text" id="projectInput" placeholder="Enter a new project name" required>
+            <button type="submit">Add Project</button>
         </form>
-        <ul id="taskList"></ul>
 
+        <ul id="projectList"></ul>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const projectForm = document.getElementById('projectForm');
+            const projectInput = document.getElementById('projectInput');
+            const projectList = document.getElementById('projectList');
 
-            const taskForm = document.getElementById('taskForm');
-            const taskInput = document.getElementById('taskInput');
-            const taskList = document.getElementById('taskList');
+            let projects = [];
 
-            taskForm.addEventListener('submit', (e) => {
+            projectForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                if (taskInput.value.trim()) {
-                    addTask(taskInput.value);
-                    taskInput.value = '';
+                if (projectInput.value.trim()) {
+                    addProject(projectInput.value);
+                    projectInput.value = '';
                 }
             });
 
-            function addTask(taskText) {
+            function addProject(projectName) {
+                const project = {
+                    id: Date.now(),
+                    name: projectName,
+                    tasks: []
+                };
+                projects.push(project);
+                renderProject(project);
+            }
+
+            function renderProject(project) {
                 const li = document.createElement('li');
+                li.className = 'project';
                 li.innerHTML = `
-                    ${taskText}
-                    <button class="deleteTask">Delete</button>
+                    <h3>${project.name}</h3>
+                    <form class="taskForm">
+                        <input type="text" class="taskInput" placeholder="Enter a new task" required>
+                        <button type="submit">Add Task</button>
+                    </form>
+                    <ul class="taskList"></ul>
                 `;
-                li.querySelector('.deleteTask').addEventListener('click', () => {
-                    li.remove();
+
+                const taskForm = li.querySelector('.taskForm');
+                const taskInput = li.querySelector('.taskInput');
+                const taskList = li.querySelector('.taskList');
+
+                taskForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (taskInput.value.trim()) {
+                        addTask(project, taskInput.value, taskList);
+                        taskInput.value = '';
+                    }
                 });
+
+                projectList.appendChild(li);
+            }
+
+            function addTask(project, taskName, taskList) {
+                const task = {
+                    id: Date.now(),
+                    name: taskName,
+                    completed: false
+                };
+                project.tasks.push(task);
+                renderTask(task, taskList);
+            }
+
+            function renderTask(task, taskList) {
+                const li = document.createElement('li');
+                li.className = 'task';
+                li.innerHTML = `
+                    <input type="checkbox" ${task.completed ? 'checked' : ''}>
+                    <span>${task.name}</span>
+                `;
+
+                const checkbox = li.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', () => {
+                    task.completed = checkbox.checked;
+                });
+
                 taskList.appendChild(li);
             }
         });
-
     </script>
-
 </body>
 </html>
