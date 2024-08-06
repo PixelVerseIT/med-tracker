@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Manager</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        #taskForm {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #taskInput {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+        #addTask {
+            padding: 10px 15px;
+            background: #5caab8;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        #taskList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #taskList li {
+            background: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .deleteTask {
+            background: #d9534f;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Project Manager</h1>
+        <p>Easily manage your projects and tasks!</p>
+
+        <form id="taskForm">
+            <input type="text" id="taskInput" placeholder="Enter a new task" required>
+            <button type="submit" id="addTask">Add Task</button>
+        </form>
+        <ul id="taskList"></ul>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const taskForm = document.getElementById('taskForm');
+            const taskInput = document.getElementById('taskInput');
+            const taskList = document.getElementById('taskList');
+
+            taskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (taskInput.value.trim()) {
+                    addTask(taskInput.value);
+                    taskInput.value = '';
+                }
+            });
+
+            function addTask(taskText) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${taskText}
+                    <button class="deleteTask">Delete</button>
+                `;
+                li.querySelector('.deleteTask').addEventListener('click', () => {
+                    li.remove();
+                });
+                taskList.appendChild(li);
+            }
+        });
+
+    </script>
+
+</body>
+</html>
