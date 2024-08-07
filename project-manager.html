@@ -132,37 +132,147 @@
 
             let projects = JSON.parse(localStorage.getItem('projects')) || [];
 
-            function saveToLocalStorage() {
-                localStorage.setItem('projects', JSON.stringify(projects));
-            }
+            const saveToLocalStorage = () => localStorage.setItem('projects', JSON.stringify(projects));
 
-            function renderAllProjects() {
-                projectList.innerHTML = '';
-                projects.forEach(project => renderProject(project));
-            }
+            const createElementWithClass = (tag, className) => {
+                const element = document.createElement(tag);
+                element.className = className;
+                return element;
+            };
 
-            projectForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                if (projectInput.value.trim() && projectDate.value) {
-                    addProject(projectInput.value, projectDate.value);
-                    projectInput.value = '';
-                    projectDate.value = '';
+            const createButton = (text, className, clickHandler) => {
+                const button = createElementWithClass('button', className);
+                button.textContent = text;
+                button.addEventListener('click', clickHandler);
+                return button;
+            };
+
+            const promptEdit = (item, field) => {
+                const newValue = prompt(`Enter new ${field}:`, item[field]);
+                if (newValue && newValue.trim()) {
+                    item[field] = newValue.trim();
+                    return true;
                 }
-            });
+                return false;
+            };
 
-            searchInput.addEventListener('input', () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const filterValue = filterSelect.value;
-                filterProjects(searchTerm, filterValue);
-            });
+            const renderItem = (item, parentList, itemType) => {
+                const li = createElementWithClass('li', itemType);
+                const header = createElementWithClass('div', `${itemType}Header`);
+                
+                if (itemType !== 'project') {
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = item.completed;
+                    checkbox.addEventListener('change', () => {
+                        item.completed = checkbox.checked;
+                        saveToLocalStorage();
+                    });
+                    header.appendChild(checkbox);
+                }
 
-            filterSelect.addEventListener('change', () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const filterValue = filterSelect.value;
-                filterProjects(searchTerm, filterValue);
-            });
+                const title = document.createElement(itemType === 'project' ? 'h2' : 'h3');
+                title.innerHTML = `${item.name} <span class="date">${item.date}</span>`;
+                header.appendChild(title);
 
-            function filterProjects(searchTerm, filterValue) {
+                const buttonContainer = document.createElement('div');
+                buttonContainer.appendChild(createButton('Edit', 'edit', () => editItem(item, li, itemType)));
+                buttonContainer.appendChild(createButton('Delete', 'delete', () => deleteItem(item, li, parentList, itemType)));
+                
+                if (itemType === 'task') {
+                    buttonContainer.appendChild(createButton('Details', 'toggleDetails', () => li.querySelector('.taskDetails').classList.toggle('hidden')));
+                }
+
+                header.appendChild(buttonContainer);
+                li.appendChild(header);
+
+                if (itemType === 'project' || itemType === 'task') {
+                    const form = createElementWithClass('form', `${itemType === 'project' ? 'task' : 'subtask'}Form`);
+                    form.innerHTML = `
+                        <input type="text" class="${itemType === 'project' ? 'task' : 'subtask'}Input" placeholder="Enter a new ${itemType === 'project' ? 'task' : 'subtask'}" required>
+                        ${itemType === 'project' ? '<textarea class="taskDescription" placeholder="Task description"></textarea>' : ''}
+                        <input type="date" class="${itemType === 'project' ? 'task' : 'subtask'}Date" required>
+                        <button type="submit">Add ${itemType === 'project' ? 'Task' : 'Subtask'}</button>
+                    `;
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const nameInput = form.querySelector(`.${itemType === 'project' ? 'task' : 'subtask'}Input`);
+                        const dateInput = form.querySelector(`.${itemType === 'project' ? 'task' : 'subtask'}Date`);
+                        if (nameInput.value.trim() && dateInput.value) {
+                            const newItem = {
+                                id: Date.now(),
+                                name: nameInput.value.trim(),
+                                date: dateInput.value,
+                                completed: false
+                            };
+                            if (itemType === 'project') {
+                                newItem.description = form.querySelector('.taskDescription').value;
+                                newItem.notes = '';
+                                newItem.subtasks = [];
+                                item.tasks.push(newItem);
+                            } else {
+                                item.subtasks.push(newItem);
+                            }
+                            renderItem(newItem, li.querySelector(`.${itemType === 'project' ? 'task' : 'subtask'}List`), itemType === 'project' ? 'task' : 'subtask');
+                            saveToLocalStorage();
+                            form.reset();
+                        }
+                    });
+                    li.appendChild(form);
+
+                    const childList = createElementWithClass('ul', `${itemType === 'project' ? 'task' : 'subtask'}List`);
+                    li.appendChild(childList);
+
+                    if (itemType === 'project') {
+                        item.tasks.forEach(task => renderItem(task, childList, 'task'));
+                    } else if (itemType === 'task') {
+                        const taskDetails = createElementWithClass('div', 'taskDetails hidden');
+                        taskDetails.innerHTML = `
+                            <p><strong>Description:</strong> ${item.description}</p>
+                            <textarea class="taskNotes" placeholder="Add notes here">${item.notes}</textarea>
+                        `;
+                        taskDetails.querySelector('.taskNotes').addEventListener('input', (e) => {
+                            item.notes = e.target.value;
+                            saveToLocalStorage();
+                        });
+                        li.appendChild(taskDetails);
+                        item.subtasks.forEach(subtask => renderItem(subtask, childList, 'subtask'));
+                    }
+                }
+
+                parentList.appendChild(li);
+            };
+
+            const editItem = (item, itemElement, itemType) => {
+                if (promptEdit(item, 'name') && promptEdit(item, 'date')) {
+                    const header = itemElement.querySelector(`.${itemType}Header`);
+                    const title = header.querySelector(itemType === 'project' ? 'h2' : 'h3');
+                    title.innerHTML = `${item.name} <span class="date">${item.date}</span>`;
+                    if (itemType === 'task') {
+                        promptEdit(item, 'description');
+                        itemElement.querySelector('.taskDetails p').innerHTML = `<strong>Description:</strong> ${item.description}`;
+                    }
+                    saveToLocalStorage();
+                }
+            };
+
+            const deleteItem = (item, itemElement, parentList, itemType) => {
+                if (confirm(`Are you sure you want to delete this ${itemType}?`)) {
+                    if (itemType === 'project') {
+                        projects = projects.filter(p => p.id !== item.id);
+                    } else if (itemType === 'task') {
+                        const project = projects.find(p => p.tasks.some(t => t.id === item.id));
+                        project.tasks = project.tasks.filter(t => t.id !== item.id);
+                    } else {
+                        const task = projects.flatMap(p => p.tasks).find(t => t.subtasks.some(s => s.id === item.id));
+                        task.subtasks = task.subtasks.filter(s => s.id !== item.id);
+                    }
+                    parentList.removeChild(itemElement);
+                    saveToLocalStorage();
+                }
+            };
+
+            const filterProjects = (searchTerm, filterValue) => {
                 projectList.innerHTML = '';
                 projects.forEach(project => {
                     const filteredProject = {
@@ -182,266 +292,31 @@
                     if (project.name.toLowerCase().includes(searchTerm) || 
                         project.date.includes(searchTerm) || 
                         filteredProject.tasks.length > 0) {
-                        renderProject(filteredProject);
+                        renderItem(filteredProject, projectList, 'project');
                     }
                 });
-            }
+            };
 
-            function addProject(projectName, projectDate) {
-                const project = {
-                    id: Date.now(),
-                    name: projectName,
-                    date: projectDate,
-                    tasks: []
-                };
-                projects.push(project);
-                renderProject(project);
-                saveToLocalStorage();
-            }
-
-            function renderProject(project) {
-                const li = document.createElement('li');
-                li.className = 'project';
-                li.innerHTML = `
-                    <div class="projectHeader">
-                        <h2>${project.name} <span class="date">${project.date}</span></h2>
-                        <div>
-                            <button class="edit">Edit</button>
-                            <button class="delete">Delete</button>
-                        </div>
-                    </div>
-                    <form class="taskForm">
-                        <input type="text" class="taskInput" placeholder="Enter a new task" required>
-                        <textarea class="taskDescription" placeholder="Task description"></textarea>
-                        <input type="date" class="taskDate" required>
-                        <button type="submit">Add Task</button>
-                    </form>
-                    <ul class="taskList"></ul>
-                `;
-
-                const taskForm = li.querySelector('.taskForm');
-                const taskInput = li.querySelector('.taskInput');
-                const taskDescription = li.querySelector('.taskDescription');
-                const taskDate = li.querySelector('.taskDate');
-                const taskList = li.querySelector('.taskList');
-
-                taskForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    if (taskInput.value.trim() && taskDate.value) {
-                        addTask(project, taskInput.value, taskDescription.value, taskDate.value, taskList);
-                        taskInput.value = '';
-                        taskDescription.value = '';
-                        taskDate.value = '';
-                    }
-                });
-
-                li.querySelector('.edit').addEventListener('click', () => editProject(project, li));
-                li.querySelector('.delete').addEventListener('click', () => deleteProject(project, li));
-
-                projectList.appendChild(li);
-                project.tasks.forEach(task => renderTask(task, taskList));
-            }
-
-            function editProject(project, projectElement) {
-                const projectHeader = projectElement.querySelector('.projectHeader');
-                const projectName = projectHeader.querySelector('h2');
-                const projectDate = projectHeader.querySelector('.date');
-                const newName = prompt('Enter new project name:', project.name);
-                if (newName && newName.trim()) {
-                    project.name = newName.trim();
-                    const newDate = prompt('Enter new project date (YYYY-MM-DD):', project.date);
-                    if (newDate && newDate.trim()) {
-                        project.date = newDate.trim();
-                        projectName.textContent = `${project.name} `;
-                        projectDate.textContent = project.date;
-                        saveToLocalStorage();
-                    }
-                }
-            }
-
-            function deleteProject(project, projectElement) {
-                if (confirm('Are you sure you want to delete this project?')) {
-                    projects = projects.filter(p => p.id !== project.id);
-                    projectList.removeChild(projectElement);
+            projectForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (projectInput.value.trim() && projectDate.value) {
+                    const newProject = {
+                        id: Date.now(),
+                        name: projectInput.value.trim(),
+                        date: projectDate.value,
+                        tasks: []
+                    };
+                    projects.push(newProject);
+                    renderItem(newProject, projectList, 'project');
                     saveToLocalStorage();
+                    projectForm.reset();
                 }
-            }
+            });
 
-            function addTask(project, taskName, taskDescription, taskDate, taskList) {
-                const task = {
-                    id: Date.now(),
-                    name: taskName,
-                    description: taskDescription,
-                    date: taskDate,
-                    completed: false,
-                    notes: '',
-                    subtasks: []
-                };
-                project.tasks.push(task);
-                renderTask(task, taskList);
-                saveToLocalStorage();
-            }
+            searchInput.addEventListener('input', () => filterProjects(searchInput.value.toLowerCase(), filterSelect.value));
+            filterSelect.addEventListener('change', () => filterProjects(searchInput.value.toLowerCase(), filterSelect.value));
 
-            function renderTask(task, taskList) {
-                const li = document.createElement('li');
-                li.className = 'task';
-                li.innerHTML = `
-                    <div class="taskHeader">
-                        <input type="checkbox" ${task.completed ? 'checked' : ''}>
-                        <h3>${task.name} <span class="date">${task.date}</span></h3>
-                        <div>
-                            <button class="edit">Edit</button>
-                            <button class="delete">Delete</button>
-                            <button class="toggleDetails">Details</button>
-                        </div>
-                    </div>
-                    <div class="taskDetails hidden">
-                        <p><strong>Description:</strong> ${task.description}</p>
-                        <textarea class="taskNotes" placeholder="Add notes here">${task.notes}</textarea>
-                        <form class="subtaskForm">
-                            <input type="text" class="subtaskInput" placeholder="Enter a new subtask" required>
-                            <input type="date" class="subtaskDate" required>
-                            <button type="submit">Add Subtask</button>
-                        </form>
-                        <ul class="subtaskList"></ul>
-                    </div>
-                `;
-
-                const checkbox = li.querySelector('input[type="checkbox"]');
-                checkbox.addEventListener('change', () => {
-                    task.completed = checkbox.checked;
-                    saveToLocalStorage();
-                });
-
-                const toggleDetails = li.querySelector('.toggleDetails');
-                const taskDetails = li.querySelector('.taskDetails');
-                toggleDetails.addEventListener('click', () => {
-                    taskDetails.classList.toggle('hidden');
-                });
-
-                const taskNotes = li.querySelector('.taskNotes');
-                taskNotes.addEventListener('input', () => {
-                    task.notes = taskNotes.value;
-                    saveToLocalStorage();
-                });
-
-                li.querySelector('.edit').addEventListener('click', () => editTask(task, li));
-                li.querySelector('.delete').addEventListener('click', () => deleteTask(task, li, taskList));
-
-                const subtaskForm = li.querySelector('.subtaskForm');
-                const subtaskInput = li.querySelector('.subtaskInput');
-                const subtaskDate = li.querySelector('.subtaskDate');
-                const subtaskList = li.querySelector('.subtaskList');
-
-                subtaskForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    if (subtaskInput.value.trim() && subtaskDate.value) {
-                        addSubtask(task, subtaskInput.value, subtaskDate.value, subtaskList);
-                        subtaskInput.value = '';
-                        subtaskDate.value = '';
-                    }
-                });
-
-                taskList.appendChild(li);
-                task.subtasks.forEach(subtask => renderSubtask(subtask, subtaskList));
-            }
-
-            function editTask(task, taskElement) {
-                const taskHeader = taskElement.querySelector('.taskHeader');
-                const taskName = taskHeader.querySelector('h3');
-                const taskDate = taskHeader.querySelector('.date');
-                const taskDescription = taskElement.querySelector('.taskDetails p');
-                const newName = prompt('Enter new task name:', task.name);
-                if (newName && newName.trim()) {
-                    task.name = newName.trim();
-                    const newDate = prompt('Enter new task date (YYYY-MM-DD):', task.date);
-                    if (newDate && newDate.trim()) {
-                        task.date = newDate.trim();
-                        const newDescription = prompt('Enter new task description:', task.description);
-                        if (newDescription !== null) {
-                            task.description = newDescription;
-                            taskName.textContent = `${task.name} `;
-                            taskDate.textContent = task.date;
-                            taskDescription.innerHTML = `<strong>Description:</strong> ${task.description}`;
-                            saveToLocalStorage();
-                        }
-                    }
-                }
-            }
-
-            function deleteTask(task, taskElement, taskList) {
-                if (confirm('Are you sure you want to delete this task?')) {
-                    const project = projects.find(p => p.tasks.some(t => t.id === task.id));
-                    project.tasks = project.tasks.filter(t => t.id !== task.id);
-                    taskList.removeChild(taskElement);
-                    saveToLocalStorage();
-                }
-            }
-
-            function addSubtask(task, subtaskName, subtaskDate, subtaskList) {
-                const subtask = {
-                    id: Date.now(),
-                    name: subtaskName,
-                    date: subtaskDate,
-                    completed: false
-                };
-                task.subtasks.push(subtask);
-                renderSubtask(subtask, subtaskList);
-                saveToLocalStorage();
-            }
-
-            function renderSubtask(subtask, subtaskList) {
-                const li = document.createElement('li');
-                li.className = 'subtask';
-                li.innerHTML = `
-                    <div class="subtaskHeader">
-                        <input type="checkbox" ${subtask.completed ? 'checked' : ''}>
-                        <span>${subtask.name} <span class="date">${subtask.date}</span></span>
-                        <div>
-                            <button class="edit">Edit</button>
-                            <button class="delete">Delete</button>
-                        </div>
-                    </div>
-                `;
-
-                const checkbox = li.querySelector('input[type="checkbox"]');
-                checkbox.addEventListener('change', () => {
-                    subtask.completed = checkbox.checked;
-                    saveToLocalStorage();
-                });
-
-                li.querySelector('.edit').addEventListener('click', () => editSubtask(subtask, li));
-                li.querySelector('.delete').addEventListener('click', () => deleteSubtask(subtask, li, subtaskList));
-
-                subtaskList.appendChild(li);
-            }
-
-            function editSubtask(subtask, subtaskElement) {
-                const subtaskName = subtaskElement.querySelector('span');
-                const subtaskDate = subtaskElement.querySelector('.date');
-                const newName = prompt('Enter new subtask name:', subtask.name);
-                if (newName && newName.trim()) {
-                    subtask.name = newName.trim();
-                    const newDate = prompt('Enter new subtask date (YYYY-MM-DD):', subtask.date);
-                    if (newDate && newDate.trim()) {
-                        subtask.date = newDate.trim();
-                        subtaskName.textContent = `${subtask.name} `;
-                        subtaskDate.textContent = subtask.date;
-                        saveToLocalStorage();
-                    }
-                }
-            }
-
-            function deleteSubtask(subtask, subtaskElement, subtaskList) {
-                if (confirm('Are you sure you want to delete this subtask?')) {
-                    const task = projects.flatMap(p => p.tasks).find(t => t.subtasks.some(s => s.id === subtask.id));
-                    task.subtasks = task.subtasks.filter(s => s.id !== subtask.id);
-                    subtaskList.removeChild(subtaskElement);
-                    saveToLocalStorage();
-                }
-            }
-
-            renderAllProjects();
+            projects.forEach(project => renderItem(project, projectList, 'project'));
         });
     </script>
 </body>
