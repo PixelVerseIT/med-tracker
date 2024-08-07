@@ -26,7 +26,7 @@
         form {
             margin-bottom: 20px;
         }
-        input[type="text"], textarea {
+        input[type="text"], textarea, select {
             width: calc(100% - 22px);
             padding: 10px;
             margin-bottom: 10px;
@@ -80,12 +80,33 @@
         .hidden {
             display: none;
         }
+        #searchAndFilter {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        #searchInput {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        #filterSelect {
+            width: 150px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Project Manager</h1>
         
+        <div id="searchAndFilter">
+            <input type="text" id="searchInput" placeholder="Search projects and tasks">
+            <select id="filterSelect">
+                <option value="all">All Tasks</option>
+                <option value="completed">Completed Tasks</option>
+                <option value="pending">Pending Tasks</option>
+            </select>
+        </div>
+
         <form id="projectForm">
             <input type="text" id="projectInput" placeholder="Enter a new project name" required>
             <button type="submit">Add Project</button>
@@ -99,6 +120,8 @@
             const projectForm = document.getElementById('projectForm');
             const projectInput = document.getElementById('projectInput');
             const projectList = document.getElementById('projectList');
+            const searchInput = document.getElementById('searchInput');
+            const filterSelect = document.getElementById('filterSelect');
 
             let projects = JSON.parse(localStorage.getItem('projects')) || [];
 
@@ -118,6 +141,39 @@
                     projectInput.value = '';
                 }
             });
+
+            searchInput.addEventListener('input', () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                const filterValue = filterSelect.value;
+                filterProjects(searchTerm, filterValue);
+            });
+
+            filterSelect.addEventListener('change', () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                const filterValue = filterSelect.value;
+                filterProjects(searchTerm, filterValue);
+            });
+
+            function filterProjects(searchTerm, filterValue) {
+                projectList.innerHTML = '';
+                projects.forEach(project => {
+                    const filteredProject = {
+                        ...project,
+                        tasks: project.tasks.filter(task => {
+                            const matchesSearch = task.name.toLowerCase().includes(searchTerm) ||
+                                                  task.description.toLowerCase().includes(searchTerm);
+                            const matchesFilter = filterValue === 'all' ||
+                                                  (filterValue === 'completed' && task.completed) ||
+                                                  (filterValue === 'pending' && !task.completed);
+                            return matchesSearch && matchesFilter;
+                        })
+                    };
+
+                    if (project.name.toLowerCase().includes(searchTerm) || filteredProject.tasks.length > 0) {
+                        renderProject(filteredProject);
+                    }
+                });
+            }
 
             function addProject(projectName) {
                 const project = {
@@ -325,6 +381,25 @@
                 li.querySelector('.delete').addEventListener('click', () => deleteSubtask(subtask, li, subtaskList));
 
                 subtaskList.appendChild(li);
+            }
+
+            function editSubtask(subtask, subtaskElement) {
+                const subtaskName = subtaskElement.querySelector('span');
+                const newName = prompt('Enter new subtask name:', subtask.name);
+                if (newName && newName.trim()) {
+                    subtask.name = newName.trim();
+                    subtaskName.textContent = subtask.name;
+                    saveToLocalStorage();
+                }
+            }
+
+            function deleteSubtask(subtask, subtaskElement, subtaskList) {
+                if (confirm('Are you sure you want to delete this subtask?')) {
+                    const task = projects.flatMap(p => p.tasks).find(t => t.subtasks.some(s => s.id === subtask.id));
+                    task.subtasks = task.subtasks.filter(s => s.id !== subtask.id);
+                    subtaskList.removeChild(subtaskElement);
+                    saveToLocalStorage();
+                }
             }
 
             renderAllProjects();
