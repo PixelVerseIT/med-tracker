@@ -4,121 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Manager</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1, h2, h3 {
-            color: #333;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        input[type="text"], textarea, select {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin-bottom: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            padding: 8px 12px;
-            background: #5cb85c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 5px;
-        }
-        button.delete {
-            background: #d9534f;
-        }
-        button.edit {
-            background: #f0ad4e;
-        }
-        #projectList, .taskList, .subtaskList {
-            list-style-type: none;
-            padding: 0;
-        }
-        .project, .task, .subtask {
-            background: #f9f9f9;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            border-left: 5px solid #5cb85c;
-        }
-        .task {
-            margin-left: 20px;
-            border-left-color: #5bc0de;
-        }
-        .subtask {
-            margin-left: 40px;
-            border-left-color: #f0ad4e;
-        }
-        .projectHeader, .taskHeader, .subtaskHeader {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .taskDetails, .subtaskForm {
-            margin-top: 10px;
-        }
-        .hidden {
-            display: none;
-        }
-        #searchAndFilter {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        #searchInput {
-            flex-grow: 1;
-            margin-right: 10px;
-        }
-        #filterSelect {
-            width: 150px;
-        }
-        .date {
-            font-size: 0.8em;
-            color: #666;
-            margin-left: 10px;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <h1>Project Manager</h1>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto max-w-3xl p-4">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Project Manager</h1>
         
-        <div id="searchAndFilter">
-            <input type="text" id="searchInput" placeholder="Search projects, tasks, subtasks, and notes">
-            <select id="filterSelect">
+        <div class="flex mb-4">
+            <input type="text" id="searchInput" placeholder="Search projects, tasks, subtasks, and notes" class="flex-grow mr-2 p-2 border border-gray-300 rounded">
+            <select id="filterSelect" class="w-40 p-2 border border-gray-300 rounded">
                 <option value="all">All Tasks</option>
                 <option value="completed">Completed Tasks</option>
                 <option value="pending">Pending Tasks</option>
             </select>
         </div>
 
-        <form id="projectForm">
-            <input type="text" id="projectInput" placeholder="Enter a new project name" required>
-            <input type="date" id="projectDate" required>
-            <button type="submit">Add Project</button>
+        <form id="projectForm" class="mb-6">
+            <input type="text" id="projectInput" placeholder="Enter a new project name" required class="w-full mb-2 p-2 border border-gray-300 rounded">
+            <div class="flex">
+                <input type="date" id="projectDate" required class="flex-grow mr-2 p-2 border border-gray-300 rounded">
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Add Project</button>
+            </div>
         </form>
 
-        <ul id="projectList"></ul>
+        <ul id="projectList" class="space-y-4"></ul>
     </div>
 
     <script>
@@ -141,7 +50,7 @@
             };
 
             const createButton = (text, className, clickHandler) => {
-                const button = createElementWithClass('button', className);
+                const button = createElementWithClass('button', `${className} px-2 py-1 rounded text-white text-sm mr-1`);
                 button.textContent = text;
                 button.addEventListener('click', clickHandler);
                 return button;
@@ -157,13 +66,14 @@
             };
 
             const renderItem = (item, parentList, itemType) => {
-                const li = createElementWithClass('li', itemType);
-                const header = createElementWithClass('div', `${itemType}Header`);
+                const li = createElementWithClass('li', `${itemType} bg-white p-4 rounded shadow`);
+                const header = createElementWithClass('div', `${itemType}Header flex justify-between items-center mb-2`);
                 
                 if (itemType !== 'project') {
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = item.completed;
+                    checkbox.className = 'mr-2';
                     checkbox.addEventListener('change', () => {
                         item.completed = checkbox.checked;
                         saveToLocalStorage();
@@ -172,27 +82,30 @@
                 }
 
                 const title = document.createElement(itemType === 'project' ? 'h2' : 'h3');
-                title.innerHTML = `${item.name} <span class="date">${item.date}</span>`;
+                title.className = itemType === 'project' ? 'text-xl font-semibold' : 'text-lg font-medium';
+                title.innerHTML = `${item.name} <span class="text-sm text-gray-500 ml-2">${item.date}</span>`;
                 header.appendChild(title);
 
-                const buttonContainer = document.createElement('div');
-                buttonContainer.appendChild(createButton('Edit', 'edit', () => editItem(item, li, itemType)));
-                buttonContainer.appendChild(createButton('Delete', 'delete', () => deleteItem(item, li, parentList, itemType)));
+                const buttonContainer = createElementWithClass('div', 'flex');
+                buttonContainer.appendChild(createButton('Edit', 'bg-yellow-500 hover:bg-yellow-600', () => editItem(item, li, itemType)));
+                buttonContainer.appendChild(createButton('Delete', 'bg-red-500 hover:bg-red-600', () => deleteItem(item, li, parentList, itemType)));
                 
                 if (itemType === 'task') {
-                    buttonContainer.appendChild(createButton('Details', 'toggleDetails', () => li.querySelector('.taskDetails').classList.toggle('hidden')));
+                    buttonContainer.appendChild(createButton('Details', 'bg-blue-500 hover:bg-blue-600', () => li.querySelector('.taskDetails').classList.toggle('hidden')));
                 }
 
                 header.appendChild(buttonContainer);
                 li.appendChild(header);
 
                 if (itemType === 'project' || itemType === 'task') {
-                    const form = createElementWithClass('form', `${itemType === 'project' ? 'task' : 'subtask'}Form`);
+                    const form = createElementWithClass('form', `${itemType === 'project' ? 'task' : 'subtask'}Form mt-4`);
                     form.innerHTML = `
-                        <input type="text" class="${itemType === 'project' ? 'task' : 'subtask'}Input" placeholder="Enter a new ${itemType === 'project' ? 'task' : 'subtask'}" required>
-                        ${itemType === 'project' ? '<textarea class="taskDescription" placeholder="Task description"></textarea>' : ''}
-                        <input type="date" class="${itemType === 'project' ? 'task' : 'subtask'}Date" required>
-                        <button type="submit">Add ${itemType === 'project' ? 'Task' : 'Subtask'}</button>
+                        <input type="text" class="${itemType === 'project' ? 'task' : 'subtask'}Input w-full mb-2 p-2 border border-gray-300 rounded" placeholder="Enter a new ${itemType === 'project' ? 'task' : 'subtask'}" required>
+                        ${itemType === 'project' ? '<textarea class="taskDescription w-full mb-2 p-2 border border-gray-300 rounded" placeholder="Task description"></textarea>' : ''}
+                        <div class="flex">
+                            <input type="date" class="${itemType === 'project' ? 'task' : 'subtask'}Date flex-grow mr-2 p-2 border border-gray-300 rounded" required>
+                            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Add ${itemType === 'project' ? 'Task' : 'Subtask'}</button>
+                        </div>
                     `;
                     form.addEventListener('submit', (e) => {
                         e.preventDefault();
@@ -220,16 +133,16 @@
                     });
                     li.appendChild(form);
 
-                    const childList = createElementWithClass('ul', `${itemType === 'project' ? 'task' : 'subtask'}List`);
+                    const childList = createElementWithClass('ul', `${itemType === 'project' ? 'task' : 'subtask'}List mt-4 space-y-2`);
                     li.appendChild(childList);
 
                     if (itemType === 'project') {
                         item.tasks.forEach(task => renderItem(task, childList, 'task'));
                     } else if (itemType === 'task') {
-                        const taskDetails = createElementWithClass('div', 'taskDetails hidden');
+                        const taskDetails = createElementWithClass('div', 'taskDetails hidden mt-4');
                         taskDetails.innerHTML = `
-                            <p><strong>Description:</strong> ${item.description}</p>
-                            <textarea class="taskNotes" placeholder="Add notes here">${item.notes}</textarea>
+                            <p class="mb-2"><strong>Description:</strong> ${item.description}</p>
+                            <textarea class="taskNotes w-full p-2 border border-gray-300 rounded" placeholder="Add notes here">${item.notes}</textarea>
                         `;
                         taskDetails.querySelector('.taskNotes').addEventListener('input', (e) => {
                             item.notes = e.target.value;
@@ -247,7 +160,7 @@
                 if (promptEdit(item, 'name') && promptEdit(item, 'date')) {
                     const header = itemElement.querySelector(`.${itemType}Header`);
                     const title = header.querySelector(itemType === 'project' ? 'h2' : 'h3');
-                    title.innerHTML = `${item.name} <span class="date">${item.date}</span>`;
+                    title.innerHTML = `${item.name} <span class="text-sm text-gray-500 ml-2">${item.date}</span>`;
                     if (itemType === 'task') {
                         promptEdit(item, 'description');
                         itemElement.querySelector('.taskDetails p').innerHTML = `<strong>Description:</strong> ${item.description}`;
