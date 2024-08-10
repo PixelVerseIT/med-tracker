@@ -79,12 +79,10 @@
                             <label class="block text-sm font-medium text-gray-700">Date</label>
                             <input type="date" id="editDate" value="${item.date}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                         </div>
-                        ${itemType === 'task' ? `
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Description</label>
                             <textarea id="editDescription" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${item.description || ''}</textarea>
                         </div>
-                        ` : ''}
                         <div class="flex justify-end space-x-2">
                             <button type="button" id="cancelEdit" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancel</button>
                             <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
@@ -99,15 +97,11 @@
                     e.preventDefault();
                     item.name = document.getElementById('editName').value;
                     item.date = document.getElementById('editDate').value;
-                    if (itemType === 'task') {
-                        item.description = document.getElementById('editDescription').value;
-                    }
+                    item.description = document.getElementById('editDescription').value;
                     const header = itemElement.querySelector(`.${itemType}Header`);
                     const title = header.querySelector(itemType === 'project' ? 'h2' : 'h3');
                     title.innerHTML = `${item.name} <span class="text-sm text-gray-500 ml-2">${item.date}</span>`;
-                    if (itemType === 'task') {
-                        itemElement.querySelector('.taskDetails p').innerHTML = `<strong>Description:</strong> ${item.description}`;
-                    }
+                    itemElement.querySelector('.itemDescription').textContent = item.description;
                     saveToLocalStorage();
                     hideModal();
                 });
@@ -154,12 +148,10 @@
                             <label class="block text-sm font-medium text-gray-700">Date</label>
                             <input type="date" id="itemDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                         </div>
-                        ${itemType === 'task' ? `
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Description</label>
                             <textarea id="itemDescription" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
                         </div>
-                        ` : ''}
                         <div class="flex justify-end space-x-2">
                             <button type="button" id="cancelAdd" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancel</button>
                             <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add ${itemType}</button>
@@ -174,18 +166,19 @@
                     e.preventDefault();
                     const nameInput = document.getElementById('itemName');
                     const dateInput = document.getElementById('itemDate');
+                    const descriptionInput = document.getElementById('itemDescription');
                     if (nameInput.value.trim() && dateInput.value) {
                         const newItem = {
                             id: Date.now(),
                             name: nameInput.value.trim(),
                             date: dateInput.value,
+                            description: descriptionInput.value,
                             completed: false
                         };
                         if (itemType === 'project') {
                             newItem.tasks = [];
                             projects.push(newItem);
                         } else if (itemType === 'task') {
-                            newItem.description = document.getElementById('itemDescription').value;
                             newItem.notes = '';
                             newItem.subtasks = [];
                             parentItem.tasks.push(newItem);
@@ -200,7 +193,7 @@
             };
 
             const renderItem = (item, parentList, itemType) => {
-                const li = createElementWithClass('li', `${itemType} bg-white p-4 rounded shadow`);
+                const li = createElementWithClass('li', `${itemType} bg-white p-4 rounded shadow transition-all duration-300 ease-in-out`);
                 const header = createElementWithClass('div', `${itemType}Header flex justify-between items-center mb-2`);
                 
                 if (itemType !== 'project') {
@@ -210,6 +203,8 @@
                     checkbox.className = 'mr-2';
                     checkbox.addEventListener('change', () => {
                         item.completed = checkbox.checked;
+                        li.style.backgroundColor = item.completed ? '#f0f0f0' : 'white';
+                        li.style.opacity = item.completed ? '0.6' : '1';
                         saveToLocalStorage();
                     });
                     header.appendChild(checkbox);
@@ -231,6 +226,10 @@
                 header.appendChild(buttonContainer);
                 li.appendChild(header);
 
+                const description = createElementWithClass('p', 'itemDescription text-gray-600 mb-2');
+                description.textContent = item.description || 'No description provided.';
+                li.appendChild(description);
+
                 if (itemType === 'project' || itemType === 'task') {
                     const addButton = createButton(`Add ${itemType === 'project' ? 'Task' : 'Subtask'}`, 'bg-green-500 hover:bg-green-600', () => addItem(item, li.querySelector(`.${itemType === 'project' ? 'task' : 'subtask'}List`), itemType === 'project' ? 'task' : 'subtask'));
                     li.appendChild(addButton);
@@ -243,7 +242,6 @@
                     } else if (itemType === 'task') {
                         const taskDetails = createElementWithClass('div', 'taskDetails hidden mt-4');
                         taskDetails.innerHTML = `
-                            <p class="mb-2"><strong>Description:</strong> ${item.description}</p>
                             <textarea class="taskNotes w-full p-2 border border-gray-300 rounded" placeholder="Add notes here">${item.notes}</textarea>
                         `;
                         taskDetails.querySelector('.taskNotes').addEventListener('input', (e) => {
@@ -267,7 +265,7 @@
                             const matchesSearch = task.name.toLowerCase().includes(searchTerm) ||
                                                   task.description.toLowerCase().includes(searchTerm) ||
                                                   task.notes.toLowerCase().includes(searchTerm) ||
-                                                  task.subtasks.some(subtask => subtask.name.toLowerCase().includes(searchTerm));
+                                                  task.subtasks.some(subtask => subtask.name.toLowerCase().includes(searchTerm) || subtask.description.toLowerCase().includes(searchTerm));
                             const matchesFilter = filterValue === 'all' ||
                                                   (filterValue === 'completed' && task.completed) ||
                                                   (filterValue === 'pending' && !task.completed);
@@ -276,11 +274,11 @@
                     };
 
                     if (project.name.toLowerCase().includes(searchTerm) || 
-                        project.date.includes(searchTerm) || 
+                        project.date.includes(searchTerm) ||
+                        project.description.toLowerCase().includes(searchTerm) ||
                         filteredProject.tasks.length > 0) {
                         renderItem(filteredProject, projectList, 'project');
-                    }
-                });
+                    }});
             };
 
             addProjectBtn.addEventListener('click', () => addItem(null, projectList, 'project'));
