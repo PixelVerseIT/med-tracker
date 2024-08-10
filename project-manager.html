@@ -5,10 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 1px solid #ccc;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        input[type="checkbox"]:checked {
+            background-color: #333;
+        }
+        input, textarea{
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 0.25rem;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 font-sans">
     <div class="container mx-auto max-w-3xl p-4">
-        <h1 class="text-3xl font-bold mb-6 text-gray-800">Project Manager</h1>
+        <h1 class="text-3xl font-bold mb-2 text-center mt-4">Project Manager</h1>
+        <p class="text-lg mb-4 text-center">A project management tool to manage you projects and set tasks & subtasks along with due dates and notes/descriptions. By Hayden Kong.</p>
         
         <div class="flex mb-4">
             <input type="text" id="searchInput" placeholder="Search projects, tasks, subtasks, and notes" class="flex-grow mr-2 p-2 border border-gray-300 rounded">
