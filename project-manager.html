@@ -19,13 +19,7 @@
             </select>
         </div>
 
-        <form id="projectForm" class="mb-6">
-            <input type="text" id="projectInput" placeholder="Enter a new project name" required class="w-full mb-2 p-2 border border-gray-300 rounded">
-            <div class="flex">
-                <input type="date" id="projectDate" required class="flex-grow mr-2 p-2 border border-gray-300 rounded">
-                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Add Project</button>
-            </div>
-        </form>
+        <button id="addProjectBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mb-6">Add Project</button>
 
         <ul id="projectList" class="space-y-4"></ul>
     </div>
@@ -39,14 +33,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const projectForm = document.getElementById('projectForm');
-            const projectInput = document.getElementById('projectInput');
-            const projectDate = document.getElementById('projectDate');
             const projectList = document.getElementById('projectList');
             const searchInput = document.getElementById('searchInput');
             const filterSelect = document.getElementById('filterSelect');
             const modal = document.getElementById('modal');
             const modalContent = document.getElementById('modalContent');
+            const addProjectBtn = document.getElementById('addProjectBtn');
 
             let projects = JSON.parse(localStorage.getItem('projects')) || [];
 
@@ -150,6 +142,63 @@
                 });
             };
 
+            const addItem = (parentItem, parentList, itemType) => {
+                const modalHtml = `
+                    <h2 class="text-xl font-bold mb-4">Add ${itemType}</h2>
+                    <form id="addItemForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" id="itemName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="itemDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        ${itemType === 'task' ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea id="itemDescription" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                        </div>
+                        ` : ''}
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" id="cancelAdd" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add ${itemType}</button>
+                        </div>
+                    </form>
+                `;
+
+                showModal(modalHtml);
+
+                document.getElementById('cancelAdd').addEventListener('click', hideModal);
+                document.getElementById('addItemForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const nameInput = document.getElementById('itemName');
+                    const dateInput = document.getElementById('itemDate');
+                    if (nameInput.value.trim() && dateInput.value) {
+                        const newItem = {
+                            id: Date.now(),
+                            name: nameInput.value.trim(),
+                            date: dateInput.value,
+                            completed: false
+                        };
+                        if (itemType === 'project') {
+                            newItem.tasks = [];
+                            projects.push(newItem);
+                        } else if (itemType === 'task') {
+                            newItem.description = document.getElementById('itemDescription').value;
+                            newItem.notes = '';
+                            newItem.subtasks = [];
+                            parentItem.tasks.push(newItem);
+                        } else {
+                            parentItem.subtasks.push(newItem);
+                        }
+                        renderItem(newItem, parentList, itemType);
+                        saveToLocalStorage();
+                        hideModal();
+                    }
+                });
+            };
+
             const renderItem = (item, parentList, itemType) => {
                 const li = createElementWithClass('li', `${itemType} bg-white p-4 rounded shadow`);
                 const header = createElementWithClass('div', `${itemType}Header flex justify-between items-center mb-2`);
@@ -183,40 +232,8 @@
                 li.appendChild(header);
 
                 if (itemType === 'project' || itemType === 'task') {
-                    const form = createElementWithClass('form', `${itemType === 'project' ? 'task' : 'subtask'}Form mt-4`);
-                    form.innerHTML = `
-                        <input type="text" class="${itemType === 'project' ? 'task' : 'subtask'}Input w-full mb-2 p-2 border border-gray-300 rounded" placeholder="Enter a new ${itemType === 'project' ? 'task' : 'subtask'}" required>
-                        ${itemType === 'project' ? '<textarea class="taskDescription w-full mb-2 p-2 border border-gray-300 rounded" placeholder="Task description"></textarea>' : ''}
-                        <div class="flex">
-                            <input type="date" class="${itemType === 'project' ? 'task' : 'subtask'}Date flex-grow mr-2 p-2 border border-gray-300 rounded" required>
-                            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Add ${itemType === 'project' ? 'Task' : 'Subtask'}</button>
-                        </div>
-                    `;
-                    form.addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        const nameInput = form.querySelector(`.${itemType === 'project' ? 'task' : 'subtask'}Input`);
-                        const dateInput = form.querySelector(`.${itemType === 'project' ? 'task' : 'subtask'}Date`);
-                        if (nameInput.value.trim() && dateInput.value) {
-                            const newItem = {
-                                id: Date.now(),
-                                name: nameInput.value.trim(),
-                                date: dateInput.value,
-                                completed: false
-                            };
-                            if (itemType === 'project') {
-                                newItem.description = form.querySelector('.taskDescription').value;
-                                newItem.notes = '';
-                                newItem.subtasks = [];
-                                item.tasks.push(newItem);
-                            } else {
-                                item.subtasks.push(newItem);
-                            }
-                            renderItem(newItem, li.querySelector(`.${itemType === 'project' ? 'task' : 'subtask'}List`), itemType === 'project' ? 'task' : 'subtask');
-                            saveToLocalStorage();
-                            form.reset();
-                        }
-                    });
-                    li.appendChild(form);
+                    const addButton = createButton(`Add ${itemType === 'project' ? 'Task' : 'Subtask'}`, 'bg-green-500 hover:bg-green-600', () => addItem(item, li.querySelector(`.${itemType === 'project' ? 'task' : 'subtask'}List`), itemType === 'project' ? 'task' : 'subtask'));
+                    li.appendChild(addButton);
 
                     const childList = createElementWithClass('ul', `${itemType === 'project' ? 'task' : 'subtask'}List mt-4 space-y-2`);
                     li.appendChild(childList);
@@ -266,21 +283,7 @@
                 });
             };
 
-            projectForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                if (projectInput.value.trim() && projectDate.value) {
-                    const newProject = {
-                        id: Date.now(),
-                        name: projectInput.value.trim(),
-                        date: projectDate.value,
-                        tasks: []
-                    };
-                    projects.push(newProject);
-                    renderItem(newProject, projectList, 'project');
-                    saveToLocalStorage();
-                    projectForm.reset();
-                }
-            });
+            addProjectBtn.addEventListener('click', () => addItem(null, projectList, 'project'));
 
             searchInput.addEventListener('input', () => filterProjects(searchInput.value.toLowerCase(), filterSelect.value));
             filterSelect.addEventListener('change', () => filterProjects(searchInput.value.toLowerCase(), filterSelect.value));
