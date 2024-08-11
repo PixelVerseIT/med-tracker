@@ -5,31 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blood Test Tracker</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #4caf9e;
+            --secondary-color: #f2f2f2;
+            --text-color: #333;
+            --error-color: #ff6b6b;
+        }
         body {
+            font-family: 'Poppins', sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f9f9f9;
+            color: var(--text-color);
         }
         h1, h2 {
-            color: #333;
+            color: var(--primary-color);
             text-align: center;
         }
         .input-group {
             margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
         }
         label {
-            display: inline-block;
-            width: 200px;
+            flex: 1;
+            min-width: 200px;
             margin-bottom: 5px;
         }
         input {
-            width: 150px;
+            flex: 2;
+            min-width: 150px;
             padding: 8px;
-            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         button {
-            background-color: #4caf9e;
+            background-color: var(--primary-color);
             color: white;
             padding: 10px 15px;
             border: none;
@@ -37,6 +53,7 @@
             width: 100%;
             margin-top: 10px;
             border-radius: 5px;
+            transition: background-color 0.3s;
         }
         button:hover {
             background-color: #409587;
@@ -46,9 +63,10 @@
         }
         .history-item {
             background-color: white;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         table {
             width: 100%;
@@ -56,82 +74,110 @@
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 10px;
             text-align: left;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: var(--secondary-color);
         }
         .out-of-range {
-            color: red;
+            color: var(--error-color);
             font-weight: bold;
         }
         #chartContainer {
             margin-top: 30px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-selector {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .error {
+            color: var(--error-color);
+            font-size: 0.9em;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
 
     <h1>Blood Test Tracker</h1>
-    <div class="input-group">
-        <label for="date">Test Date:</label>
-        <input type="date" id="date" required>
-    </div>
-    <div class="input-group">
-        <label for="hemoglobin">Hemoglobin (g/dL):</label>
-        <input type="number" id="hemoglobin" step="0.1" min="0" max="30">
-    </div>
-    <div class="input-group">
-        <label for="wbc">White Blood Cells (K/uL):</label>
-        <input type="number" id="wbc" step="0.1" min="0" max="100">
-    </div>
-    <div class="input-group">
-        <label for="platelets">Platelets (K/uL):</label>
-        <input type="number" id="platelets" step="1" min="0" max="1000">
-    </div>
-    <div class="input-group">
-        <label for="glucose">Glucose (mg/dL):</label>
-        <input type="number" id="glucose" step="1" min="0" max="500">
-    </div>
-    <div class="input-group">
-        <label for="cholesterol">Total Cholesterol (mg/dL):</label>
-        <input type="number" id="cholesterol" step="1" min="0" max="500">
-    </div>
-    <button onclick="logData()">Log Blood Test Results</button>
-
+    <form id="bloodTestForm">
+        <div class="input-group">
+            <label for="date">Test Date:</label>
+            <input type="date" id="date" required>
+        </div>
+        <div class="input-group">
+            <label for="hemoglobin">Hemoglobin (g/dL):</label>
+            <input type="number" id="hemoglobin" step="0.1" min="0" max="30">
+        </div>
+        <div class="input-group">
+            <label for="wbc">White Blood Cells (K/uL):</label>
+            <input type="number" id="wbc" step="0.1" min="0" max="100">
+        </div>
+        <div class="input-group">
+            <label for="platelets">Platelets (K/uL):</label>
+            <input type="number" id="platelets" step="1" min="0" max="1000">
+        </div>
+        <div class="input-group">
+            <label for="glucose">Glucose (mg/dL):</label>
+            <input type="number" id="glucose" step="1" min="0" max="500">
+        </div>
+        <div class="input-group">
+            <label for="cholesterol">Total Cholesterol (mg/dL):</label>
+            <input type="number" id="cholesterol" step="1" min="0" max="500">
+        </div>
+        <button type="submit">Log Blood Test Results</button>
+    </form>
     <div id="history"></div>
     <div id="chartContainer">
-        <h2>Hemoglobin Trend</h2>
-        <canvas id="hemoglobinChart"></canvas>
+        <div class="chart-selector">
+            <label for="metricSelect">Select metric to display: </label>
+            <select id="metricSelect">
+                <option value="hemoglobin">Hemoglobin</option>
+                <option value="wbc">White Blood Cells</option>
+                <option value="platelets">Platelets</option>
+                <option value="glucose">Glucose</option>
+                <option value="cholesterol">Total Cholesterol</option>
+            </select>
+        </div>
+        <canvas id="bloodTestChart"></canvas>
     </div>
 
     <script>
         let bloodTestData = JSON.parse(localStorage.getItem('bloodTestData')) || [];
-        let hemoglobinChart;
+        let bloodTestChart;
 
         const normalRanges = {
-            hemoglobin: { min: 13.5, max: 17.5 },
-            wbc: { min: 4.5, max: 11.0 },
-            platelets: { min: 150, max: 450 },
-            glucose: { min: 70, max: 100 },
-            cholesterol: { max: 200 }
+            hemoglobin: { min: 13.5, max: 17.5, unit: 'g/dL' },
+            wbc: { min: 4.5, max: 11.0, unit: 'K/uL' },
+            platelets: { min: 150, max: 450, unit: 'K/uL' },
+            glucose: { min: 70, max: 100, unit: 'mg/dL' },
+            cholesterol: { max: 200, unit: 'mg/dL' }
         };
 
+        document.getElementById('bloodTestForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            logData();
+        });
+
+        document.getElementById('metricSelect').addEventListener('change', updateChart);
+
         function logData() {
-            const date = document.getElementById('date').value;
-            const hemoglobin = parseFloat(document.getElementById('hemoglobin').value);
-            const wbc = parseFloat(document.getElementById('wbc').value);
-            const platelets = parseFloat(document.getElementById('platelets').value);
-            const glucose = parseFloat(document.getElementById('glucose').value);
-            const cholesterol = parseFloat(document.getElementById('cholesterol').value);
+            const newEntry = {
+                date: document.getElementById('date').value,
+                hemoglobin: parseFloat(document.getElementById('hemoglobin').value),
+                wbc: parseFloat(document.getElementById('wbc').value),
+                platelets: parseFloat(document.getElementById('platelets').value),
+                glucose: parseFloat(document.getElementById('glucose').value),
+                cholesterol: parseFloat(document.getElementById('cholesterol').value)
+            };
 
-            if (!date) {
-                alert("Please enter the test date.");
-                return;
-            }
+            if (!validateEntry(newEntry)) return;
 
-            const newEntry = { date, hemoglobin, wbc, platelets, glucose, cholesterol };
             bloodTestData.push(newEntry);
             bloodTestData.sort((a, b) => new Date(b.date) - new Date(a.date));
             localStorage.setItem('bloodTestData', JSON.stringify(bloodTestData));
@@ -139,6 +185,25 @@
             updateHistory();
             updateChart();
             clearInputs();
+        }
+
+        function validateEntry(entry) {
+            let isValid = true;
+            Object.keys(normalRanges).forEach(metric => {
+                const input = document.getElementById(metric);
+                const errorElement = input.nextElementSibling;
+                if (errorElement && errorElement.classList.contains('error')) {
+                    errorElement.remove();
+                }
+                if (isNaN(entry[metric])) {
+                    isValid = false;
+                    const error = document.createElement('div');
+                    error.textContent = `Please enter a valid number for ${metric}.`;
+                    error.classList.add('error');
+                    input.parentNode.insertBefore(error, input.nextSibling);
+                }
+            });
+            return isValid;
         }
 
         function updateHistory() {
@@ -156,78 +221,93 @@
                             <th>Value</th>
                             <th>Normal Range</th>
                         </tr>
-                        ${createTableRow('Hemoglobin', entry.hemoglobin, 'g/dL', normalRanges.hemoglobin)}
-                        ${createTableRow('White Blood Cells', entry.wbc, 'K/uL', normalRanges.wbc)}
-                        ${createTableRow('Platelets', entry.platelets, 'K/uL', normalRanges.platelets)}
-                        ${createTableRow('Glucose', entry.glucose, 'mg/dL', normalRanges.glucose)}
-                        ${createTableRow('Total Cholesterol', entry.cholesterol, 'mg/dL', normalRanges.cholesterol)}
+                        ${Object.keys(normalRanges).map(metric => createTableRow(metric, entry[metric], normalRanges[metric])).join('')}
                     </table>
                 `;
                 history.appendChild(historyItem);
             });
         }
 
-        function createTableRow(metric, value, unit, range) {
+        function createTableRow(metric, value, range) {
             const isOutOfRange = (range.min && value < range.min) || (range.max && value > range.max);
             const className = isOutOfRange ? 'out-of-range' : '';
             return `
                 <tr>
-                    <td>${metric}</td>
-                    <td class="${className}">${value} ${unit}</td>
-                    <td>${range.min ? range.min + ' - ' : '< '}${range.max} ${unit}</td>
+                    <td>${metric.charAt(0).toUpperCase() + metric.slice(1)}</td>
+                    <td class="${className}">${value} ${range.unit}</td>
+                    <td>${range.min ? range.min + ' - ' : '< '}${range.max} ${range.unit}</td>
                 </tr>
             `;
         }
 
         function updateChart() {
-            const ctx = document.getElementById('hemoglobinChart').getContext('2d');
+            const metric = document.getElementById('metricSelect').value;
+            const ctx = document.getElementById('bloodTestChart').getContext('2d');
             const chartData = bloodTestData.map(entry => ({
                 x: new Date(entry.date),
-                y: entry.hemoglobin
+                y: entry[metric]
             })).reverse();
 
-            if (hemoglobinChart) {
-                hemoglobinChart.data.datasets[0].data = chartData;
-                hemoglobinChart.update();
-            } else {
-                hemoglobinChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        datasets: [{
-                            label: 'Hemoglobin',
-                            data: chartData,
-                            borderColor: 'rgb(75, 192, 192)',
-                            tension: 0.1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            x: {
-                                type: 'time',
-                                time: {
-                                    unit: 'day'
-                                }
+            if (bloodTestChart) {
+                bloodTestChart.destroy();
+            }
+
+            bloodTestChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: metric.charAt(0).toUpperCase() + metric.slice(1),
+                        data: chartData,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
                             },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Hemoglobin (g/dL)'
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: `${metric.charAt(0).toUpperCase() + metric.slice(1)} (${normalRanges[metric].unit})`
+                            }
+                        }
+                    },
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: normalRanges[metric].min,
+                                    yMax: normalRanges[metric].min,
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    borderWidth: 2,
+                                },
+                                line2: {
+                                    type: 'line',
+                                    yMin: normalRanges[metric].max,
+                                    yMax: normalRanges[metric].max,
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    borderWidth: 2,
                                 }
                             }
                         }
                     }
-                });
-            }
+                }
+            });
         }
 
         function clearInputs() {
-            document.getElementById('date').value = '';
-            document.getElementById('hemoglobin').value = '';
-            document.getElementById('wbc').value = '';
-            document.getElementById('platelets').value = '';
-            document.getElementById('glucose').value = '';
-            document.getElementById('cholesterol').value = '';
+            document.getElementById('bloodTestForm').reset();
         }
 
         updateHistory();
