@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Test Tracker</title>
+    <style>
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 200px;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4caf9e;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #409587;
+        }
+        #history {
+            margin-top: 20px;
+        }
+        .history-item {
+            background-color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Blood Test Tracker</h1>
+
+    <div class="input-group">
+        <label for="date">Test Date:</label>
+        <input type="date" id="date" required>
+    </div>
+    <div class="input-group">
+        <label for="hemoglobin">Hemoglobin (g/dL):</label>
+        <input type="number" id="hemoglobin" step="0.1" min="0" max="30">
+    </div>
+    <div class="input-group">
+        <label for="wbc">White Blood Cells (K/uL):</label>
+        <input type="number" id="wbc" step="0.1" min="0" max="100">
+    </div>
+    <div class="input-group">
+        <label for="platelets">Platelets (K/uL):</label>
+        <input type="number" id="platelets" step="1" min="0" max="1000">
+    </div>
+    <div class="input-group">
+        <label for="glucose">Glucose (mg/dL):</label>
+        <input type="number" id="glucose" step="1" min="0" max="500">
+    </div>
+    <div class="input-group">
+        <label for="cholesterol">Total Cholesterol (mg/dL):</label>
+        <input type="number" id="cholesterol" step="1" min="0" max="500">
+    </div>
+    <button onclick="logData()">Log Blood Test Results</button>
+    <div id="history"></div>
+
+    <script>
+        function logData() {
+            const date = document.getElementById('date').value;
+            const hemoglobin = document.getElementById('hemoglobin').value;
+            const wbc = document.getElementById('wbc').value;
+            const platelets = document.getElementById('platelets').value;
+            const glucose = document.getElementById('glucose').value;
+            const cholesterol = document.getElementById('cholesterol').value;
+
+            if (!date) {
+                alert("Please enter the test date.");
+                return;
+            }
+
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `
+                <h3>Test Date: ${date}</h3>
+                <table>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                        <th>Normal Range</th>
+                    </tr>
+                    <tr>
+                        <td>Hemoglobin</td>
+                        <td>${hemoglobin} g/dL</td>
+                        <td>13.5 - 17.5 g/dL</td>
+                    </tr>
+                    <tr>
+                        <td>White Blood Cells</td>
+                        <td>${wbc} K/uL</td>
+                        <td>4.5 - 11.0 K/uL</td>
+                    </tr>
+                    <tr>
+                        <td>Platelets</td>
+                        <td>${platelets} K/uL</td>
+                        <td>150 - 450 K/uL</td>
+                    </tr>
+                    <tr>
+                        <td>Glucose</td>
+                        <td>${glucose} mg/dL</td>
+                        <td>70 - 100 mg/dL</td>
+                    </tr>
+                    <tr>
+                        <td>Total Cholesterol</td>
+                        <td>${cholesterol} mg/dL</td>
+                        <td>< 200 mg/dL</td>
+                    </tr>
+                </table>
+            `;
+
+            const history = document.getElementById('history');
+            history.insertBefore(historyItem, history.firstChild);
+
+            document.getElementById('date').value = '';
+            document.getElementById('hemoglobin').value = '';
+            document.getElementById('wbc').value = '';
+            document.getElementById('platelets').value = '';
+            document.getElementById('glucose').value = '';
+            document.getElementById('cholesterol').value = '';
+        }
+    </script>
+    
+</body>
+</html>
