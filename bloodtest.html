@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blood Test Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <style>
         body {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
         }
-        h1 {
+        h1, h2 {
             color: #333;
             text-align: center;
         }
@@ -23,7 +24,7 @@
             margin-bottom: 5px;
         }
         input {
-            width: 100px;
+            width: 150px;
             padding: 8px;
             box-sizing: border-box;
         }
@@ -61,12 +62,18 @@
         th {
             background-color: #f2f2f2;
         }
+        .out-of-range {
+            color: red;
+            font-weight: bold;
+        }
+        #chartContainer {
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
 
     <h1>Blood Test Tracker</h1>
-
     <div class="input-group">
         <label for="date">Test Date:</label>
         <input type="date" id="date" required>
@@ -92,63 +99,129 @@
         <input type="number" id="cholesterol" step="1" min="0" max="500">
     </div>
     <button onclick="logData()">Log Blood Test Results</button>
+
     <div id="history"></div>
+    <div id="chartContainer">
+        <h2>Hemoglobin Trend</h2>
+        <canvas id="hemoglobinChart"></canvas>
+    </div>
 
     <script>
+        let bloodTestData = JSON.parse(localStorage.getItem('bloodTestData')) || [];
+        let hemoglobinChart;
+
+        const normalRanges = {
+            hemoglobin: { min: 13.5, max: 17.5 },
+            wbc: { min: 4.5, max: 11.0 },
+            platelets: { min: 150, max: 450 },
+            glucose: { min: 70, max: 100 },
+            cholesterol: { max: 200 }
+        };
+
         function logData() {
             const date = document.getElementById('date').value;
-            const hemoglobin = document.getElementById('hemoglobin').value;
-            const wbc = document.getElementById('wbc').value;
-            const platelets = document.getElementById('platelets').value;
-            const glucose = document.getElementById('glucose').value;
-            const cholesterol = document.getElementById('cholesterol').value;
+            const hemoglobin = parseFloat(document.getElementById('hemoglobin').value);
+            const wbc = parseFloat(document.getElementById('wbc').value);
+            const platelets = parseFloat(document.getElementById('platelets').value);
+            const glucose = parseFloat(document.getElementById('glucose').value);
+            const cholesterol = parseFloat(document.getElementById('cholesterol').value);
 
             if (!date) {
                 alert("Please enter the test date.");
                 return;
             }
 
-            const historyItem = document.createElement('div');
-            historyItem.className = 'history-item';
-            historyItem.innerHTML = `
-                <h3>Test Date: ${date}</h3>
-                <table>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Value</th>
-                        <th>Normal Range</th>
-                    </tr>
-                    <tr>
-                        <td>Hemoglobin</td>
-                        <td>${hemoglobin} g/dL</td>
-                        <td>13.5 - 17.5 g/dL</td>
-                    </tr>
-                    <tr>
-                        <td>White Blood Cells</td>
-                        <td>${wbc} K/uL</td>
-                        <td>4.5 - 11.0 K/uL</td>
-                    </tr>
-                    <tr>
-                        <td>Platelets</td>
-                        <td>${platelets} K/uL</td>
-                        <td>150 - 450 K/uL</td>
-                    </tr>
-                    <tr>
-                        <td>Glucose</td>
-                        <td>${glucose} mg/dL</td>
-                        <td>70 - 100 mg/dL</td>
-                    </tr>
-                    <tr>
-                        <td>Total Cholesterol</td>
-                        <td>${cholesterol} mg/dL</td>
-                        <td>< 200 mg/dL</td>
-                    </tr>
-                </table>
-            `;
+            const newEntry = { date, hemoglobin, wbc, platelets, glucose, cholesterol };
+            bloodTestData.push(newEntry);
+            bloodTestData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            localStorage.setItem('bloodTestData', JSON.stringify(bloodTestData));
 
+            updateHistory();
+            updateChart();
+            clearInputs();
+        }
+
+        function updateHistory() {
             const history = document.getElementById('history');
-            history.insertBefore(historyItem, history.firstChild);
+            history.innerHTML = '';
 
+            bloodTestData.forEach(entry => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <h3>Test Date: ${entry.date}</h3>
+                    <table>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Normal Range</th>
+                        </tr>
+                        ${createTableRow('Hemoglobin', entry.hemoglobin, 'g/dL', normalRanges.hemoglobin)}
+                        ${createTableRow('White Blood Cells', entry.wbc, 'K/uL', normalRanges.wbc)}
+                        ${createTableRow('Platelets', entry.platelets, 'K/uL', normalRanges.platelets)}
+                        ${createTableRow('Glucose', entry.glucose, 'mg/dL', normalRanges.glucose)}
+                        ${createTableRow('Total Cholesterol', entry.cholesterol, 'mg/dL', normalRanges.cholesterol)}
+                    </table>
+                `;
+                history.appendChild(historyItem);
+            });
+        }
+
+        function createTableRow(metric, value, unit, range) {
+            const isOutOfRange = (range.min && value < range.min) || (range.max && value > range.max);
+            const className = isOutOfRange ? 'out-of-range' : '';
+            return `
+                <tr>
+                    <td>${metric}</td>
+                    <td class="${className}">${value} ${unit}</td>
+                    <td>${range.min ? range.min + ' - ' : '< '}${range.max} ${unit}</td>
+                </tr>
+            `;
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('hemoglobinChart').getContext('2d');
+            const chartData = bloodTestData.map(entry => ({
+                x: new Date(entry.date),
+                y: entry.hemoglobin
+            })).reverse();
+
+            if (hemoglobinChart) {
+                hemoglobinChart.data.datasets[0].data = chartData;
+                hemoglobinChart.update();
+            } else {
+                hemoglobinChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: 'Hemoglobin',
+                            data: chartData,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Hemoglobin (g/dL)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function clearInputs() {
             document.getElementById('date').value = '';
             document.getElementById('hemoglobin').value = '';
             document.getElementById('wbc').value = '';
@@ -156,7 +229,9 @@
             document.getElementById('glucose').value = '';
             document.getElementById('cholesterol').value = '';
         }
+
+        updateHistory();
+        updateChart();
     </script>
-    
 </body>
 </html>
